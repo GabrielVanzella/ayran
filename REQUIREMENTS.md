@@ -3,6 +3,11 @@
 > IA local, própria, rodando em casa, com modelos abertos que eu possa entender e modificar.
 > Documento levantado em 2026-08-25, pra retomar o setup de casa.
 
+## Identidade
+
+- **Nome**: Aruan
+- **Gênero/voz**: masculino
+
 ## Objetivo geral
 
 Ter uma IA pessoal que:
@@ -32,7 +37,7 @@ Ter uma IA pessoal que:
 - [ ] Instalar Open WebUI (interface de chat local, tipo ChatGPT) por cima do Ollama
 
 ### Fase 2 — Customização (deixar a IA "minha")
-- [ ] Criar Modelfile próprio (system prompt, personalidade, parâmetros) em cima do modelo base
+- [ ] Criar Modelfile próprio (system prompt definindo o Aruan como assistente masculino, personalidade, parâmetros) em cima do modelo base
 - [ ] Montar RAG — dar acesso aos meus próprios documentos/notas/projetos como contexto
 - [ ] Montar tool calling / agentes — conectar a IA a funções/scripts reais (rodar comandos, consultar meus projetos, etc.), no mesmo padrão de agentes tipo Claude Code
 
@@ -40,7 +45,7 @@ Ter uma IA pessoal que:
 - [ ] Wake word (ex: `openWakeWord`) — detecção de palavra de ativação
 - [ ] STT — Speech to Text (Whisper local) — transcrever minha fala
 - [ ] Ligar transcrição → LLM local com tool calling (Fase 2)
-- [ ] TTS — Text to Speech (ex: Piper) — resposta falada (opcional)
+- [ ] TTS — Text to Speech (ex: Piper) — resposta falada, com voz masculina em português (opcional)
 - [ ] Domótica/automação residencial — comandos de voz controlando dispositivos reais
   - [ ] Instalar Home Assistant (hub open-source, local, integra com a maioria das marcas)
   - [ ] Adquirir dispositivos inteligentes (tomadas/lâmpadas — Tuya/Smart Life ou Zigbee)
