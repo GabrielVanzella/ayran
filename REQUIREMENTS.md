@@ -7,6 +7,7 @@
 
 - **Nome**: Ayran
 - **Gênero/voz**: masculino
+- **Dono/usuário**: Gabriel (uso pessoal exclusivo)
 
 ## Objetivo geral
 
@@ -41,6 +42,7 @@ Ter uma IA pessoal que:
 - [ ] Montar RAG — dar acesso aos meus próprios documentos/notas/projetos como contexto
 - [ ] Montar tool calling / agentes — conectar a IA a funções/scripts reais (rodar comandos, consultar meus projetos, etc.), no mesmo padrão de agentes tipo Claude Code
   - [ ] Ferramenta de histórico de trabalho: consultar `git log` de um projeto por período (ex: "o que eu fiz ontem no projeto X") — precisa de um mapeamento nome do projeto → caminho da pasta
+  - [ ] Ferramenta de resumo de redes sociais: Instagram, Facebook, LinkedIn (+ outra a confirmar) via API oficial de cada plataforma — **somente leitura/resumo**, sem publicar ou responder automaticamente
 
 ### Fase 2.5 — Interface gráfica personalizada (hub central do computador)
 - [ ] Decidir stack de empacotamento: **Tauri** (recomendado — leve, frontend em HTML/CSS/JS) ou Electron (100% JS, mais pesado)
@@ -93,6 +95,7 @@ Ter uma IA pessoal que:
 | TTS (texto → voz) | Piper |
 | Wake word | openWakeWord |
 | Automação residencial | Home Assistant |
+| Redes sociais (leitura/resumo) | APIs oficiais (Meta Graph API p/ Instagram e Facebook, LinkedIn API) + outra a definir |
 | Geração de imagem | ComfyUI + Stable Diffusion/SDXL/Flux |
 | Geração de vídeo | A definir na Fase 5 (depende de GPU disponível na época) |
 | Fine-tuning | Hugging Face `transformers` + LoRA/QLoRA |
