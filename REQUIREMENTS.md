@@ -42,6 +42,13 @@ Ter uma IA pessoal que:
 - [ ] Montar tool calling / agentes — conectar a IA a funções/scripts reais (rodar comandos, consultar meus projetos, etc.), no mesmo padrão de agentes tipo Claude Code
   - [ ] Ferramenta de histórico de trabalho: consultar `git log` de um projeto por período (ex: "o que eu fiz ontem no projeto X") — precisa de um mapeamento nome do projeto → caminho da pasta
 
+### Fase 2.5 — Interface gráfica personalizada (hub central do computador)
+- [ ] Decidir stack de empacotamento: **Tauri** (recomendado — leve, frontend em HTML/CSS/JS) ou Electron (100% JS, mais pesado)
+- [ ] Frontend de chat consumindo a API local do Ollama diretamente (HTTP)
+- [ ] Painel de status: voz ativa, automação residencial, últimas ações do Ayran
+- [ ] Ícone na bandeja do sistema + atalho de teclado global pra abrir
+- [ ] Iniciar junto com o Windows (autostart)
+
 ### Fase 3 — Assistente de voz ("Jarvis" caseiro)
 - [ ] Wake word (ex: `openWakeWord`) — detecção de palavra de ativação
 - [ ] STT — Speech to Text (Whisper local) — transcrever minha fala
@@ -78,7 +85,8 @@ Ter uma IA pessoal que:
 | Componente | Ferramenta |
 |---|---|
 | Runtime de modelo de texto | Ollama |
-| Interface de chat | Open WebUI |
+| Interface de chat (rápida, genérica) | Open WebUI |
+| Interface personalizada (hub central) | Tauri (frontend HTML/CSS/JS) |
 | Modelo geral | Qwen2.5 / Llama 3.2 (3B–8B) |
 | Modelo uncensored/criativo | Dolphin (`dolphin-llama3`) |
 | STT (voz → texto) | Whisper (local) |
