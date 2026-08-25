@@ -5,7 +5,7 @@
 
 ## Identidade
 
-- **Nome**: Aruan
+- **Nome**: Ayran
 - **Gênero/voz**: masculino
 
 ## Objetivo geral
@@ -37,9 +37,10 @@ Ter uma IA pessoal que:
 - [ ] Instalar Open WebUI (interface de chat local, tipo ChatGPT) por cima do Ollama
 
 ### Fase 2 — Customização (deixar a IA "minha")
-- [ ] Criar Modelfile próprio (system prompt definindo o Aruan como assistente masculino, personalidade, parâmetros) em cima do modelo base
+- [ ] Criar Modelfile próprio (system prompt definindo o Ayran como assistente masculino, personalidade, parâmetros) em cima do modelo base
 - [ ] Montar RAG — dar acesso aos meus próprios documentos/notas/projetos como contexto
 - [ ] Montar tool calling / agentes — conectar a IA a funções/scripts reais (rodar comandos, consultar meus projetos, etc.), no mesmo padrão de agentes tipo Claude Code
+  - [ ] Ferramenta de histórico de trabalho: consultar `git log` de um projeto por período (ex: "o que eu fiz ontem no projeto X") — precisa de um mapeamento nome do projeto → caminho da pasta
 
 ### Fase 3 — Assistente de voz ("Jarvis" caseiro)
 - [ ] Wake word (ex: `openWakeWord`) — detecção de palavra de ativação
@@ -61,6 +62,11 @@ Ter uma IA pessoal que:
 ### Fase 5 — Geração de vídeo
 - [ ] Decidir caminho: comprar GPU vs. alugar GPU na nuvem por hora
 - [ ] Avaliar modelos abertos disponíveis no momento (CogVideoX, HunyuanVideo, LTX-Video, ou o que for atual)
+
+### Fase 6.5 — Modo híbrido (opcional): escalar para Claude quando necessário
+- [ ] Ferramenta `perguntar_claude(pergunta)` — chama a API da Anthropic para tarefas complexas demais pro modelo local
+- [ ] Para tarefas de código/projeto pesadas, considerar disparar uma sessão de Claude Code via linha de comando como ferramenta do Ayran
+- [ ] **Trade-off**: quebra parcialmente o "ilimitado e grátis" — API é paga por uso (tokens). Usar só como escalonamento pontual, não como padrão
 
 ### Fase 6 — Fine-tuning (aprendizado avançado)
 - [ ] Aprender base de Python + Hugging Face `transformers`
