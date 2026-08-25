@@ -19,6 +19,20 @@ Ter uma IA pessoal que:
 - Eventualmente gera imagem e vídeo
 - Serve também como forma de aprender como IA funciona de verdade, do zero
 
+## Arquitetura: um só ponto de entrada, vários modelos por trás
+
+Eu (Gabriel) só converso com o **Ayran**, num lugar só (chat/hub — Fase 2.5). Por trás, um roteador (Fase 7) decide qual modelo especializado usar pra cada pedido, sem eu precisar escolher manualmente:
+
+| Tipo de pedido | Modelo usado |
+|---|---|
+| Dia a dia / código | Qwen3 ou Phi-4-mini |
+| Escrita criativa sem restrição | Dolphin |
+| Raciocínio complexo (lógica/matemática) | Modelo de raciocínio (DeepSeek-R1/QwQ) |
+| Gerar imagem | Stable Diffusion/SDXL (Fase 4) |
+| Gerar vídeo | Modelo de vídeo (Fase 5) |
+| Comando de voz | Pipeline STT → um dos modelos acima |
+| Tarefa complexa demais pro local | Escala pro Claude (Fase 6.5) |
+
 ## Situação de hardware (ponto de partida)
 
 - Computador de casa: **CPU apenas, sem GPU dedicada**
