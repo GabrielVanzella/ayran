@@ -32,7 +32,7 @@ Ter uma IA pessoal que:
 
 ### Fase 1 — Assistente de texto local (base de tudo)
 - [ ] Instalar Ollama
-- [ ] Baixar modelo de uso geral (ex: `qwen2.5` ou `llama3.2`, 3B-8B) para tarefas do dia a dia / dev
+- [ ] Baixar modelo de uso geral (ex: `Qwen3` ou `Phi-4-mini-instruct`, 3B-8B — atualizado em ago/2026, ver "Descobertas recentes") para tarefas do dia a dia / dev
 - [ ] Baixar modelo "uncensored" para escrita criativa (ex: `dolphin-llama3`)
 - [ ] Testar ambos via terminal (`ollama run`)
 - [ ] Instalar Open WebUI (interface de chat local, tipo ChatGPT) por cima do Ollama
@@ -61,7 +61,7 @@ Ter uma IA pessoal que:
 - [ ] Wake word (ex: `openWakeWord`) — detecção de palavra de ativação
 - [ ] STT — Speech to Text (Whisper local) — transcrever minha fala
 - [ ] Ligar transcrição → LLM local com tool calling (Fase 2)
-- [ ] TTS — Text to Speech (ex: Piper) — resposta falada, com voz masculina em português (opcional)
+- [ ] TTS — Text to Speech (ex: Kokoro-82M — líder em eficiência em 2026, ou Piper como alternativa) — resposta falada, com voz masculina em português (opcional)
 - [ ] Domótica/automação residencial — comandos de voz controlando dispositivos reais
   - [ ] Instalar Home Assistant (hub open-source, local, integra com a maioria das marcas)
   - [ ] Adquirir dispositivos inteligentes (tomadas/lâmpadas — Tuya/Smart Life ou Zigbee)
@@ -87,6 +87,10 @@ Ter uma IA pessoal que:
 - [ ] Aprender base de Python + Hugging Face `transformers`
 - [ ] Fazer um fine-tuning leve (LoRA/QLoRA) com dados próprios, num modelo pequeno
 - [ ] (Opcional, longo prazo) Estudar arquitetura Transformer a fundo (paper "Attention Is All You Need", série do Andrej Karpathy construindo um GPT do zero)
+- [ ] Ciclo de melhoria contínua do Ayran (não é aprendizado em tempo real — o modelo não muda durante a conversa; é um processo deliberado e periódico):
+  - [ ] Feedback 👍/👎 nas respostas, virando dataset de correções
+  - [ ] Rodar novo fine-tuning (LoRA) periodicamente incorporando esse feedback
+  - [ ] Revisar/trocar o modelo base conforme saem versões melhores (ver "Descobertas recentes" abaixo)
 
 ### Fase 7 — Técnicas avançadas para maximizar a inteligência
 - [ ] Modelo de raciocínio (reasoning model) para tarefas complexas — ex: DeepSeek-R1 destilado ou QwQ — "pensa" passo a passo antes de responder, mais preciso em lógica/matemática/código (mais lento, mas não exige mais memória)
@@ -95,6 +99,16 @@ Ter uma IA pessoal que:
 - [ ] Roteamento de modelos — modelo pequeno/rápido para perguntas simples, modelo de raciocínio (ou escalar pro Claude, Fase 6.5) só quando a tarefa for complexa
 - [ ] Orquestração multi-agente — modelos/instâncias especializadas colaborando (planeja / executa / revisa) em vez de um modelo genérico fazendo tudo
 - [ ] Adotar MCP (Model Context Protocol) como padrão de ferramentas — protocolo aberto para conectar a IA a ferramentas/dados de forma padronizada, em vez de solução caseira
+
+## Descobertas recentes (pesquisado em 2026-08-25)
+
+- **BitNet / quantização 1-bit (Microsoft)** — pesos reduzidos a 3 valores possíveis (-1, 0, 1), permite rodar modelos bem maiores em CPU puro com bem menos RAM. Modelo `Bonsai 8B` (abr/2026) roda em ~1GB. **É a tecnologia mais relevante pra minha situação (CPU sem GPU) — acompanhar de perto.**
+- **Phi-4-mini-instruct** (Microsoft, 3.8B, ~4GB RAM, contexto de 128K) e **Qwen3.5-0.8B** (multimodal, Apache 2.0) — novas opções pequenas e fortes pra CPU, substituem a recomendação antiga de Qwen2.5/Llama 3.2
+- **Qwen3** — família que virou o padrão geral pra rodar localmente (1.7B a 235B, licença livre)
+- **Kokoro-82M** — novo líder em eficiência entre TTS locais, boa opção pra Fase 3 além do Piper
+- **NVIDIA Parakeet TDT** e **Silero VAD v5** — alternativas ao Whisper para transcrição/detecção de voz
+- **MCP spec 2026-07-28** — protocolo migrou de stateful pra stateless, facilitando escalar agentes
+- Topo absoluto do mercado aberto hoje: **Kimi K3** (2.8T parâmetros) e **GLM-5.2** — grandes demais pro meu hardware atual, relevantes só se usar cloud rental no futuro
 
 ## Stack técnica resumida
 
