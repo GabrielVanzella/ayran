@@ -1,0 +1,11 @@
+﻿# Ayran Code: modelo de codigo com contexto grande pra uso como agente (Cline/Continue).
+# Criar/atualizar:  ollama create ayran-code -f server/modelfiles/ayran-code.Modelfile
+# O qwen3.6 e hibrido (poucas camadas de atencao), entao 32K de contexto custa pouca RAM (~0,4 GB com KV q8).
+FROM qwen3.6:35b-a3b-coding
+
+PARAMETER num_ctx 32768
+PARAMETER temperature 0.3
+PARAMETER top_p 0.9
+
+# So vale quando o cliente nao manda o proprio system prompt (Cline manda; as regras dele ficam em .clinerules).
+SYSTEM """Voce e o Ayran Code, agente de programacao do Gabriel e da software house dele (VZ Tecnologia). Responda em portugues do Brasil. Leia o codigo antes de editar, siga o estilo do projeto, faca mudancas pequenas e verificaveis, e nunca diga que algo funciona sem ter verificado."""
