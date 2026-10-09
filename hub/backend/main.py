@@ -150,6 +150,27 @@ async def owui_proxy(path: str, request: Request):
                              background=BackgroundTask(r.aclose))
 
 
+# ---------------- login automatico (so no proprio servidor) ----------------
+
+LOCAL_CREDS = AYRAN_HOME / "local-admin.json"
+LOOPBACK = {"127.0.0.1", "::1"}
+
+
+@app.post("/api/auto-login")
+async def auto_login(request: Request):
+    """Entra como admin sem senha quando a central e aberta no proprio servidor.
+    Pelo tunel (Cloudflare) a conexao tambem chega de 127.0.0.1, mas sempre com cf-connecting-ip: bloqueado."""
+    local = request.client and request.client.host in LOOPBACK
+    via_tunnel = any(h in request.headers for h in ("cf-connecting-ip", "x-forwarded-for", "cf-ray"))
+    if not local or via_tunnel or not LOCAL_CREDS.exists():
+        raise HTTPException(403, "Login automatico so funciona no proprio servidor")
+    creds = json.loads(LOCAL_CREDS.read_text(encoding="utf-8"))
+    r = await request.app.state.http.post(f"{OWUI_URL}/api/v1/auths/signin", json=creds)
+    if r.status_code != 200:
+        raise HTTPException(502, "Credenciais locais invalidas (rode server/reset-admin-password.py)")
+    return r.json()
+
+
 # ---------------- noticias ----------------
 
 _news_cache: dict[str, tuple[float, list]] = {}

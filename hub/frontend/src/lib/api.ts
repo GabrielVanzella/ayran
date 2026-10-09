@@ -76,6 +76,19 @@ export async function signin(email: string, password: string): Promise<User> {
 
 export const me = () => request<User>('/owui/api/v1/auths/')
 
+/** Neste PC (servidor) o backend entra sozinho como admin; de fora retorna null. */
+export async function autoLogin(): Promise<User | null> {
+  try {
+    const res = await fetch('/api/auto-login', { method: 'POST' })
+    if (!res.ok) return null
+    const data = await res.json()
+    setToken(data.token)
+    return data
+  } catch {
+    return null
+  }
+}
+
 // ---------- chat ----------
 
 /** Envia a conversa pro Ayran e chama onDelta a cada pedaco de texto. Retorna o texto completo. */

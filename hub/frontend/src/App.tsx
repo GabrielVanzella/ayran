@@ -8,7 +8,18 @@ import Ideas from './components/Ideas'
 import Music from './components/Music'
 import Player from './components/Player'
 import Orb from './components/Orb'
-import { AuthError, getSettings, getToken, health, me, putSettings, setToken, type Settings, type User } from './lib/api'
+import {
+  AuthError,
+  autoLogin,
+  getSettings,
+  getToken,
+  health,
+  me,
+  putSettings,
+  setToken,
+  type Settings,
+  type User,
+} from './lib/api'
 
 export type Tab = 'home' | 'chat' | 'news' | 'ideas' | 'music'
 
@@ -35,7 +46,7 @@ function initialTab(): Tab {
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
-  const [checking, setChecking] = useState(!!getToken())
+  const [checking, setChecking] = useState(true)
   const [tab, setTabState] = useState<Tab>(initialTab)
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null)
   const [settings, setSettings] = useState<Settings | null>(null)
@@ -52,12 +63,12 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (!getToken()) return
-    me()
-      .then(setUser)
-      .catch(logout)
+    const session = getToken() ? me().catch(() => null) : Promise.resolve(null)
+    session
+      .then((u) => u ?? autoLogin())
+      .then((u) => (u ? setUser(u) : setToken(null)))
       .finally(() => setChecking(false))
-  }, [logout])
+  }, [])
 
   useEffect(() => {
     if (!user) return
