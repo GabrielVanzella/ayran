@@ -10,6 +10,7 @@
 import asyncio
 import json
 import os
+import re
 import sqlite3
 import time
 import uuid
@@ -96,8 +97,42 @@ async def current_user(request: Request) -> dict:
 
 # ---------------- proxy Open WebUI ----------------
 
+# Só o que a central usa passa pelo proxy: a central fica exposta na internet,
+# entao cadastro, admin e configuracoes do Open WebUI nao podem ser alcancados por aqui.
+OWUI_ALLOWED = [
+    ("POST", re.compile(r"api/v1/auths/signin")),
+    ("GET", re.compile(r"api/v1/auths/?")),
+    ("GET", re.compile(r"health")),
+    ("POST", re.compile(r"api/chat/completions")),
+    ("GET", re.compile(r"api/v1/chats/list")),
+    ("POST", re.compile(r"api/v1/chats/new")),
+    ("GET|POST|DELETE", re.compile(r"api/v1/chats/[0-9a-f-]{36}")),
+]
+
+
+LOGIN_WINDOW = 15 * 60
+LOGIN_MAX_FAILS = 8
+_login_fails: dict[str, list[float]] = {}
+
+
+def _client_ip(request: Request) -> str:
+    # atras do Cloudflare Tunnel o IP real vem nesse header
+    return request.headers.get("cf-connecting-ip") or (request.client.host if request.client else "?")
+
+
 @app.api_route("/owui/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def owui_proxy(path: str, request: Request):
+    if not any(request.method in methods.split("|") and rx.fullmatch(path) for methods, rx in OWUI_ALLOWED):
+        raise HTTPException(404, "Nao encontrado")
+
+    is_signin = path == "api/v1/auths/signin"
+    if is_signin:
+        ip = _client_ip(request)
+        recent = [t for t in _login_fails.get(ip, []) if time.time() - t < LOGIN_WINDOW]
+        _login_fails[ip] = recent
+        if len(recent) >= LOGIN_MAX_FAILS:
+            raise HTTPException(429, "Muitas tentativas de login. Tente de novo em alguns minutos.")
+
     client: httpx.AsyncClient = request.app.state.http
     headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP_HEADERS}
     req = client.build_request(
@@ -108,6 +143,8 @@ async def owui_proxy(path: str, request: Request):
         content=await request.body(),
     )
     r = await client.send(req, stream=True)
+    if is_signin and r.status_code != 200:
+        _login_fails[ip].append(time.time())
     out_headers = {k: v for k, v in r.headers.items() if k.lower() not in HOP_HEADERS}
     return StreamingResponse(r.aiter_raw(), status_code=r.status_code, headers=out_headers,
                              background=BackgroundTask(r.aclose))
