@@ -26,8 +26,12 @@ Eu (Gabriel) só converso com o **Ayran**, num lugar só (chat/hub — Fase 2.5)
 
 | Tipo de pedido | Modelo usado |
 |---|---|
-| Dia a dia / código | Qwen3 ou Phi-4-mini |
-| Escrita criativa sem restrição | Dolphin |
+| Conversa / dia a dia (rápido, padrão pra todos os usuários) | `qwen3.5:4b` (cabe inteiro na GPU de 4 GB) |
+| Conversa / dia a dia (melhor qualidade, mais lento) | `qwen3.5:9b` |
+| Código (pesado, principal pra desenvolvimento) | `qwen3.6:35b-a3b-coding` (MoE, ~3B ativos, roda em RAM+GPU) |
+| Autocomplete de código no VS Code | `qwen2.5-coder:1.5b` |
+| Embeddings pro RAG (busca nos meus documentos, multilíngue) | `bge-m3` |
+| Escrita criativa sem restrição | Dolphin (opcional, ainda não baixado) |
 | Raciocínio complexo (lógica/matemática) | Modelo de raciocínio (DeepSeek-R1/QwQ) |
 | Gerar imagem | Stable Diffusion/SDXL (Fase 4) |
 | Gerar vídeo | Modelo de vídeo (Fase 5) |
@@ -58,9 +62,9 @@ Eu (Gabriel) só converso com o **Ayran**, num lugar só (chat/hub — Fase 2.5)
 ## Fases do projeto
 
 ### Fase 1 — Assistente de texto local (base de tudo)
-- [ ] Instalar Ollama
-- [ ] Baixar modelo de uso geral (ex: `Qwen3` ou `Phi-4-mini-instruct`, 3B-8B — atualizado em ago/2026, ver "Descobertas recentes") para tarefas do dia a dia / dev
-- [ ] Baixar modelo "uncensored" para escrita criativa (ex: `dolphin-llama3`)
+- [x] Instalar Ollama (0.40.1)
+- [ ] Baixar modelos definidos em 2026-10-09 (ver tabela da "Arquitetura"): `qwen3.5:4b`, `qwen3.5:9b`, `qwen3.6:35b-a3b-coding`, `qwen2.5-coder:1.5b`, `bge-m3`
+- [ ] (Opcional) Baixar modelo "uncensored" para escrita criativa (ex: `dolphin3`)
 - [ ] Testar ambos via terminal (`ollama run`)
 - [ ] Instalar Open WebUI (interface de chat local, tipo ChatGPT) por cima do Ollama
 
@@ -82,6 +86,20 @@ Arquitetura: tudo roda na máquina servidora; só a camada com autenticação fi
   - [ ] Tailscale — acesso administrativo privado (eu)
 - [ ] Portabilidade: scripts de instalação/config versionados no repo, backup dos dados do Open WebUI (usuários, chats, chaves) pra migrar pro PC de casa
 - [ ] Documentar como os projetos consomem a API (exemplos Python/JS)
+
+### Requisitos levantados em 2026-10-09 (Gabriel é programador)
+- **Foco principal: ajudar no desenvolvimento de código** — modelo de código forte + integração com o VS Code
+- **Boa comunicação** — conversa natural em português
+- **Home própria com chat, personalizada pra mim** — de início, Open WebUI com marca do Ayran (nome, logo, modelo "Ayran" com persona); depois, o hub próprio da Fase 2.5
+- **Conversar com a IA** — por texto (chat) e por voz (modo de chamada de voz do Open WebUI como solução imediata; assistente de voz completo na Fase 3)
+- **Conexão com o VS Code** — de imediato via extensão Continue apontando pra API do Ayran (chat + autocomplete); depois, extensão própria (Fase 2.5)
+- **Abastecer sempre com informação** — base de conhecimento contínua (RAG): coleções de documentos no Open WebUI agora, banco vetorial na Fase 7
+- **Treinar cada vez mais** — ciclo de fine-tuning periódico (Fase 6); fazer no PC de casa ou em GPU alugada (4 GB de VRAM só aguenta QLoRA muito pequeno)
+- **Passar o conhecimento do Claude dos meus projetos pro Ayran**:
+  - [ ] Importar pro RAG os `CLAUDE.md`, `REQUIREMENTS.md`, docs e memórias (`~/.claude/projects/*/memory/`) de cada projeto
+  - [ ] Script de sincronização periódica (projetos → base de conhecimento do Ayran)
+  - [ ] Atenção: os termos da Anthropic restringem usar respostas do Claude pra treinar modelos concorrentes — usar **RAG** com meus próprios documentos é ok; antes de fazer fine-tuning com transcrições de conversas do Claude, revisar os termos
+- **Geração de vídeo** — inviável no notebook (4 GB VRAM); planejar no PC de casa com GPU de 12-16 GB+ ou GPU alugada (Fase 5)
 
 ### Fase 2 — Customização (deixar a IA "minha")
 - [ ] Criar Modelfile próprio (system prompt definindo o Ayran como assistente masculino, personalidade, parâmetros) em cima do modelo base
@@ -163,7 +181,9 @@ Arquitetura: tudo roda na máquina servidora; só a camada com autenticação fi
 | Runtime de modelo de texto | Ollama |
 | Interface de chat (rápida, genérica) | Open WebUI |
 | Interface personalizada (hub central) | Tauri (frontend HTML/CSS/JS) |
-| Modelo geral | Qwen2.5 / Llama 3.2 (3B–8B) |
+| Modelos de texto | Qwen3.5 (4B/9B), Qwen3.6 coding (35B-A3B), Qwen2.5-Coder 1.5B (autocomplete) — ver "Arquitetura" |
+| Embeddings (RAG) | bge-m3 |
+| VS Code (imediato) | Extensão Continue → API do Ayran |
 | Modelo uncensored/criativo | Dolphin (`dolphin-llama3`) |
 | STT (voz → texto) | Whisper (local) |
 | TTS (texto → voz) | Piper |
