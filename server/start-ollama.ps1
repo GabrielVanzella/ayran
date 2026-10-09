@@ -1,0 +1,23 @@
+# Inicia o servidor Ollama do Ayran com a configuracao do servidor (sem o app de bandeja).
+
+$ErrorActionPreference = 'Stop'
+
+$AyranHome = if ($env:AYRAN_HOME) { $env:AYRAN_HOME } else { Join-Path $env:USERPROFILE 'ayran-server' }
+$LogDir = Join-Path $AyranHome 'logs'
+New-Item -ItemType Directory -Force $LogDir | Out-Null
+
+# Nunca expor o Ollama: ele nao tem autenticacao. Quem fala com ele e o Open WebUI, local.
+$env:OLLAMA_HOST = '127.0.0.1:11434'
+# 32 GB de RAM: o modelo de codigo (~22 GB) + um pequeno (embeddings/chat) no maximo.
+$env:OLLAMA_MAX_LOADED_MODELS = '2'
+$env:OLLAMA_NUM_PARALLEL = '1'
+# Libera a memoria quando o modelo fica parado.
+$env:OLLAMA_KEEP_ALIVE = '10m'
+$env:OLLAMA_FLASH_ATTENTION = '1'
+$env:OLLAMA_KV_CACHE_TYPE = 'q8_0'
+
+$exe = (Get-Command ollama -ErrorAction SilentlyContinue).Source
+if (-not $exe) { $exe = Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama.exe' }
+# Via cmd: no PowerShell 5.1 o stderr de executavel nativo vira erro e derruba o script.
+$log = Join-Path $LogDir 'ollama.log'
+cmd /c "`"$exe`" serve >> `"$log`" 2>&1"

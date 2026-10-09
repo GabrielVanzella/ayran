@@ -63,10 +63,10 @@ Eu (Gabriel) só converso com o **Ayran**, num lugar só (chat/hub — Fase 2.5)
 
 ### Fase 1 — Assistente de texto local (base de tudo)
 - [x] Instalar Ollama (0.40.1)
-- [ ] Baixar modelos definidos em 2026-10-09 (ver tabela da "Arquitetura"): `qwen3.5:4b`, `qwen3.5:9b`, `qwen3.6:35b-a3b-coding`, `qwen2.5-coder:1.5b`, `bge-m3`
+- [x] Baixar modelos definidos em 2026-10-09 (ver tabela da "Arquitetura"): `qwen3.5:4b`, `qwen3.5:9b`, `qwen3.6:35b-a3b-coding`, `qwen2.5-coder:1.5b`, `bge-m3`
 - [ ] (Opcional) Baixar modelo "uncensored" para escrita criativa (ex: `dolphin3`)
-- [ ] Testar ambos via terminal (`ollama run`)
-- [ ] Instalar Open WebUI (interface de chat local, tipo ChatGPT) por cima do Ollama
+- [x] Testar via terminal/API (qwen3.5:4b ~19 tok/s; qwen3.6 coding ~14 tok/s, ~40s pra carregar)
+- [x] Instalar Open WebUI (0.11.4, venv em `%USERPROFILE%\ayran-server`, scripts em `server/`)
 
 ### Fase 1.5 — Servidor 24/7, multiusuário, API e acesso remoto (adicionado em 2026-10-09)
 Arquitetura: tudo roda na máquina servidora; só a camada com autenticação fica exposta.
@@ -78,7 +78,7 @@ Arquitetura: tudo roda na máquina servidora; só a camada com autenticação fi
 - [ ] Máquina como servidor: não suspender/hibernar na tomada, tampa fechada = não fazer nada, Ollama e Open WebUI iniciando com o Windows (sem precisar de login)
 - [ ] Notebook 24/7: limitar carga da bateria (~60-80%, via BIOS/utilitário do fabricante) e cuidar de temperatura/ventilação
 - [ ] Windows Update: horário ativo + reinício controlado, serviços voltam sozinhos depois do reboot
-- [ ] Ollama **nunca exposto direto** (não tem autenticação) — escuta só em `127.0.0.1:11434`
+- [x] Ollama **nunca exposto direto** (não tem autenticação) — escuta só em `127.0.0.1:11434`
 - [ ] Multiusuário: contas no Open WebUI (eu = admin, cadastro de novos usuários só com aprovação)
 - [ ] API pros meus projetos: chave de API por usuário/projeto no Open WebUI, endpoint compatível com OpenAI (`/api/chat/completions`)
 - [ ] Acesso remoto:
@@ -99,6 +99,9 @@ Arquitetura: tudo roda na máquina servidora; só a camada com autenticação fi
   - [ ] Importar pro RAG os `CLAUDE.md`, `REQUIREMENTS.md`, docs e memórias (`~/.claude/projects/*/memory/`) de cada projeto
   - [ ] Script de sincronização periódica (projetos → base de conhecimento do Ayran)
   - [ ] Atenção: os termos da Anthropic restringem usar respostas do Claude pra treinar modelos concorrentes — usar **RAG** com meus próprios documentos é ok; antes de fazer fine-tuning com transcrições de conversas do Claude, revisar os termos
+- **Ajudar a cuidar da minha empresa — uma software house**. Detalhes a levantar (tamanho da equipe, plataforma git, gestão de projetos, sistemas usados). Dados da empresa e código de clientes ficam locais; separar por permissão o que cada usuário vê (ex: base de conhecimento por cliente/projeto)
+  - Usos prováveis: assistente de código pra equipe (VS Code), revisão de código, documentação técnica, propostas/orçamentos/escopo, base de conhecimento dos projetos de clientes, onboarding de devs
+  - **Limite de capacidade**: o notebook atende bem 1 pessoa por vez no modelo de código (requisições simultâneas entram em fila). Equipe usando ao mesmo tempo → modelo de código pesado pra mim, modelo leve pra equipe, e dimensionar a GPU do PC de casa pensando em vários usuários
 - **Geração de vídeo** — inviável no notebook (4 GB VRAM); planejar no PC de casa com GPU de 12-16 GB+ ou GPU alugada (Fase 5)
 
 ### Fase 2 — Customização (deixar a IA "minha")
