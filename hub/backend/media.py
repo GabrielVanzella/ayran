@@ -6,6 +6,7 @@ O pedido em portugues e traduzido/melhorado pelo Ayran (modelo leve) pro ingles 
 
 import asyncio
 import json
+import os
 import random
 import re
 import sqlite3
@@ -25,6 +26,20 @@ CHECKPOINT = "DreamShaper_8_pruned.safetensors"
 VIDEO_MIN_VRAM_GB = 16
 WORKFLOWS = Path(__file__).parent / "workflows"
 
+# LoRA opcional: arquivo .safetensors dentro de comfyui-models/loras. Vazio = nao usa.
+LORA = os.environ.get("AYRAN_IMAGE_LORA", "")
+LORA_STRENGTH_MODEL = float(os.environ.get("AYRAN_IMAGE_LORA_MODEL", "0.8"))
+LORA_STRENGTH_CLIP = float(os.environ.get("AYRAN_IMAGE_LORA_CLIP", "0.8"))
+
+# Unico limite de conteudo: qualquer coisa envolvendo menores de idade.
+# Nudez adulta consensual e conteudo adulto em geral sao permitidos; envolvendo menores, nao
+# (servidor multiusuario — protege o Gabriel e a VZ de material de abuso infantil).
+_BLOCK_MINORS = re.compile(
+    r"\b(crian[çc]as?|menor(es)?( de idade)?|infantil|child|children|kid|kids|minor|"
+    r"underage|loli\w*|shota\w*|adolescente|teen\w*)\b",
+    re.IGNORECASE,
+)
+
 SIZES = {"quadrado": (512, 512), "retrato": (512, 768), "paisagem": (768, 512)}
 STYLES = {
     "livre": "",
@@ -35,19 +50,10 @@ STYLES = {
     "conceito": "concept art, cinematic lighting, epic composition, matte painting",
 }
 BASE_NEGATIVE = (
-    "nsfw, nude, naked, explicit, lowres, bad anatomy, bad hands, extra fingers, blurry, "
+    "lowres, bad anatomy, bad hands, extra fingers, blurry, "
     "jpeg artifacts, watermark, text, signature, deformed"
 )
 
-# Unico limite: sexual explicito e qualquer coisa envolvendo menores (servidor multiusuario da empresa).
-_BLOCK = re.compile(
-    r"\b(porn\w*|pornografi\w*|sexo|sexual|sex|sexy|nud[ea]s?|nudez|nu[ao]?s?|naked|pelad[oa]s?|"
-    r"sem roupas?|desnud\w*|lingerie|transa\w*|hentai|nsfw|"
-    r"genita\w*|pênis|penis|vagina|seios? nus|topless|orgasm\w*|erotic\w*|erótic\w*|"
-    r"crian[çc]as?|menor(es)? de idade|infantil|child|children|kid|kids|minor|underage|loli\w*|shota\w*|"
-    r"adolescente|teen\w*)\b",
-    re.IGNORECASE,
-)
 
 TRANSLATE_SYSTEM = (
     "You convert an image request (usually in Portuguese) into a Stable Diffusion prompt in English. "
@@ -63,6 +69,9 @@ class ImageRequest(BaseModel):
     steps: int = Field(default=25, ge=10, le=40)
     seed: int | None = None
     enhance: bool = True
+    checkpoint: str | None = None
+    lora_model: float | None = Field(default=None, ge=-2, le=2)
+    lora_clip: float | None = Field(default=None, ge=-2, le=2)
 
 
 def init_media_db(conn: sqlite3.Connection):
@@ -111,6 +120,7 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
             timeout=120,
         )
         out = r.json()["message"]["content"].strip().strip('"')
+        # Usa a resposta do modelo quando houver conteúdo; caso contrário, mantém o pedido original.
         return out or text
 
     async def free_ollama_gpu(client: httpx.AsyncClient):
@@ -127,8 +137,8 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
         if params.get("enhance", True):
             set_job(job["id"], status="gerando", error="Ayran escrevendo o prompt…")
             final = await enhance_prompt(client, job["prompt"])
-        if _BLOCK.search(final):
-            raise ValueError("Pedido fora do que o gerador permite.")
+        if _BLOCK_MINORS.search(job["prompt"]) or _BLOCK_MINORS.search(final):
+            raise ValueError("Não gero conteúdo envolvendo menores de idade.")
         style = STYLES.get(params.get("style", "livre"), "")
         final = f"{final}, {style}" if style else final
         set_job(job["id"], final_prompt=final, error="liberando a GPU…")
@@ -138,13 +148,20 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
         values = {
             "seed": params.get("seed") or random.randint(1, 2**31),
             "steps": params.get("steps", 25),
-            "checkpoint": CHECKPOINT,
+            "checkpoint": params.get("checkpoint") or CHECKPOINT,
             "width": width,
             "height": height,
             "prompt": final,
             "negative": BASE_NEGATIVE,
         }
-        workflow = json.loads((WORKFLOWS / "image_sd15.json").read_text(encoding="utf-8"))
+        if LORA:
+            values["lora"] = LORA
+            values["lora_model"] = params.get("lora_model", LORA_STRENGTH_MODEL)
+            values["lora_clip"] = params.get("lora_clip", LORA_STRENGTH_CLIP)
+            workflow_name = "image_sd15_lora.json"
+        else:
+            workflow_name = "image_sd15.json"
+        workflow = json.loads((WORKFLOWS / workflow_name).read_text(encoding="utf-8"))
         for node in workflow.values():
             for k, v in node["inputs"].items():
                 if isinstance(v, str) and v.startswith("{{") and v.endswith("}}"):
@@ -216,12 +233,15 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
             "video_min_vram_gb": VIDEO_MIN_VRAM_GB,
             "sizes": list(SIZES),
             "styles": list(STYLES),
+            "lora": LORA,
+            "lora_model": LORA_STRENGTH_MODEL,
+            "lora_clip": LORA_STRENGTH_CLIP,
         }
 
     @router.post("/image")
     async def create_image(req: ImageRequest, user=Depends(current_user)):
-        if _BLOCK.search(req.prompt):
-            raise HTTPException(400, "Esse tipo de imagem o gerador não faz (conteúdo sexual ou envolvendo menores).")
+        if _BLOCK_MINORS.search(req.prompt):
+            raise HTTPException(400, "Não gero conteúdo envolvendo menores de idade.")
         job_id = uuid.uuid4().hex
         with db() as conn:
             conn.execute(

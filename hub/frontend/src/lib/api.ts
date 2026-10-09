@@ -220,6 +220,9 @@ export type MediaCapabilities = {
   video_min_vram_gb: number
   sizes: string[]
   styles: string[]
+  lora: string
+  lora_model: number
+  lora_clip: number
 }
 export type MediaJob = {
   id: string
@@ -235,8 +238,15 @@ export type MediaJob = {
 
 export const getMediaCapabilities = () => request<MediaCapabilities>('/api/media/capabilities')
 export const listMedia = () => request<MediaJob[]>('/api/media')
-export const createImage = (body: { prompt: string; size: string; style: string; enhance: boolean }) =>
-  request<{ id: string }>('/api/media/image', { method: 'POST', body: JSON.stringify(body) })
+export const createImage = (body: {
+  prompt: string
+  size: string
+  style: string
+  enhance: boolean
+  checkpoint?: string | null
+  lora_model?: number | null
+  lora_clip?: number | null
+}) => request<{ id: string }>('/api/media/image', { method: 'POST', body: JSON.stringify(body) })
 export const deleteMedia = (id: string) => request(`/api/media/${id}`, { method: 'DELETE' })
 
 export async function mediaFileUrl(id: string, n: number): Promise<string> {
