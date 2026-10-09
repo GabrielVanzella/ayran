@@ -29,3 +29,6 @@ Thumbs.db
 *.wav
 *.mp4
 outputs/
+
+# Build do frontend da central
+hub/frontend/dist/

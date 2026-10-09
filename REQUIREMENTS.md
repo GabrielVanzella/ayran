@@ -64,7 +64,7 @@ Eu (Gabriel) só converso com o **Ayran**, num lugar só (chat/hub — Fase 2.5)
 ### Fase 1 — Assistente de texto local (base de tudo)
 - [x] Instalar Ollama (0.40.1)
 - [x] Baixar modelos definidos em 2026-10-09 (ver tabela da "Arquitetura"): `qwen3.5:4b`, `qwen3.5:9b`, `qwen3.6:35b-a3b-coding`, `qwen2.5-coder:1.5b`, `bge-m3`
-- [ ] (Opcional) Baixar modelo "uncensored" para escrita criativa (ex: `dolphin3`)
+- [x] Baixar modelo "uncensored" para escrita criativa (`dolphin3`, 8B) — **só para o admin**, fora do roteador automático (outros usuários não podem acessar)
 - [x] Testar via terminal/API (qwen3.5:4b ~19 tok/s; qwen3.6 coding ~14 tok/s, ~40s pra carregar)
 - [x] Instalar Open WebUI (0.11.4, venv em `%USERPROFILE%\ayran-server`, scripts em `server/`)
 
@@ -111,7 +111,26 @@ Arquitetura: tudo roda na máquina servidora; só a camada com autenticação fi
   - [ ] Ferramenta de histórico de trabalho: consultar `git log` de um projeto por período (ex: "o que eu fiz ontem no projeto X") — precisa de um mapeamento nome do projeto → caminho da pasta
   - [ ] Ferramenta de resumo de redes sociais: Instagram, Facebook, LinkedIn (+ outra a confirmar) via API oficial de cada plataforma — **somente leitura/resumo**, sem publicar ou responder automaticamente
 
-### Fase 2.5 — Interface gráfica personalizada (hub central do computador)
+### Fase 2.5 — Central do Ayran (pedido em 2026-10-09: "algo bem top")
+Uma central própria da minha IA, **acessível de qualquer lugar** (web/PWA no celular e no PC; depois empacotada como app desktop), com:
+- [x] Chat com o Ayran (roteador automático — sem escolher modelo), streaming, histórico (salvo no Open WebUI)
+- [x] Notícias (IA, tech/dev, negócios, Brasil — Google News/TabNews/HN/g1; "Briefing do Ayran")
+- [x] Ideias (kanban nova/andamento/feita; "Desenvolver com Ayran")
+- [x] Player de música (Spotify embed, fixo na barra inferior)
+- [x] Login com a mesma conta do Open WebUI (Open WebUI vira o motor/admin por trás)
+- Implementação v0.1: `hub/` (backend FastAPI + frontend React/Vite/Tailwind), porta 3000, `server/start-hub.ps1`
+- [ ] Mostrar na central qual especialista respondeu (hoje só aparece no Open WebUI)
+- [ ] Voz na central (falar/ouvir)
+
+### Fase 1.6 — Ayran como produto: API de IA para clientes da software house (pedido em 2026-10-09)
+Contexto: clientes da software house querem IA nos sistemas deles. Hoje a gente compra crédito de API de terceiros e integra. Ideia: **o Ayran fornece a chave de API** e o cliente **recarrega crédito com a gente**.
+- [ ] Gateway de API com chave por cliente, limite de gasto (créditos) e medição de uso por token
+- [ ] Recarga de créditos (Pix/cartão) e painel do cliente (saldo, consumo)
+- [ ] Roteamento por cliente: modelos locais (custo fixo) e/ou provedores externos (pagos por token) por trás da mesma chave
+- [ ] Capacidade: notebook atual NÃO aguenta produção de clientes — definir infra (PC de casa com GPU forte e/ou GPU na nuvem) antes de vender
+- [ ] Revisar termos dos provedores sobre revenda de acesso e LGPD (dados dos clientes passando pelo Ayran)
+
+Itens originais da fase:
 - [ ] Decidir stack de empacotamento: **Tauri** (recomendado — leve, frontend em HTML/CSS/JS) ou Electron (100% JS, mais pesado)
 - [ ] Frontend de chat consumindo a API local do Ollama diretamente (HTTP)
 - [ ] Painel de status: voz ativa, automação residencial, últimas ações do Ayran
@@ -163,7 +182,7 @@ Arquitetura: tudo roda na máquina servidora; só a camada com autenticação fi
 - [ ] Modelo de raciocínio (reasoning model) para tarefas complexas — ex: DeepSeek-R1 destilado ou QwQ — "pensa" passo a passo antes de responder, mais preciso em lógica/matemática/código (mais lento, mas não exige mais memória)
 - [ ] RAG avançado com banco vetorial (embeddings) — ex: ChromaDB ou Qdrant, local — busca semântica de verdade, não só palavra-chave
 - [ ] Memória de longo prazo — Ayran lembra fatos/preferências/histórico entre sessões, mesmo princípio da memória do Claude
-- [ ] Roteamento de modelos — modelo pequeno/rápido para perguntas simples, modelo de raciocínio (ou escalar pro Claude, Fase 6.5) só quando a tarefa for complexa
+- [x] Roteamento de modelos (v0.1, 2026-10-09: `server/functions/ayran_router.py` — conversa/raciocínio/código) — modelo pequeno/rápido para perguntas simples, modelo de raciocínio (ou escalar pro Claude, Fase 6.5) só quando a tarefa for complexa
 - [ ] Orquestração multi-agente — modelos/instâncias especializadas colaborando (planeja / executa / revisa) em vez de um modelo genérico fazendo tudo
 - [ ] Adotar MCP (Model Context Protocol) como padrão de ferramentas — protocolo aberto para conectar a IA a ferramentas/dados de forma padronizada, em vez de solução caseira
 

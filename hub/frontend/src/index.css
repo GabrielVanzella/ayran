@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+@import 'highlight.js/styles/github-dark.css';
+
+@theme {
+  --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --color-void: #05070d;
+  --color-panel: #0b1020;
+  --color-line: #1a2340;
+  --color-ink: #e6edf7;
+  --color-dim: #8592ad;
+  --color-neon: #22d3ee;
+  --color-neon-soft: #a5f3fc;
+  --color-violet: #8b5cf6;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-void);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* fundo: grade sutil + brilhos */
+.bg-grid {
+  background-image:
+    radial-gradient(60rem 40rem at 85% -10%, rgb(139 92 246 / 0.16), transparent 60%),
+    radial-gradient(50rem 35rem at -10% 110%, rgb(34 211 238 / 0.12), transparent 60%),
+    linear-gradient(rgb(34 211 238 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(34 211 238 / 0.035) 1px, transparent 1px);
+  background-size: auto, auto, 44px 44px, 44px 44px;
+}
+
+.glass {
+  background: linear-gradient(180deg, rgb(15 22 44 / 0.72), rgb(9 13 28 / 0.72));
+  border: 1px solid rgb(34 211 238 / 0.12);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03), 0 10px 40px -20px rgb(0 0 0 / 0.8);
+}
+
+.glow-text {
+  text-shadow: 0 0 18px rgb(34 211 238 / 0.55);
+}
+
+/* orbe do Ayran */
+.orb {
+  background: radial-gradient(circle at 35% 30%, #cffafe, #22d3ee 35%, #6d28d9 75%, #1e1b4b);
+  box-shadow: 0 0 24px rgb(34 211 238 / 0.55), 0 0 60px rgb(139 92 246 / 0.35);
+  animation: breathe 4s ease-in-out infinite;
+}
+.orb.thinking {
+  animation: breathe 1s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.06); filter: brightness(1.25); }
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #1f2a4a transparent;
+}
+
+/* markdown das respostas */
+.md { line-height: 1.65; overflow-wrap: anywhere; }
+.md p { margin: 0.5em 0; }
+.md ul, .md ol { margin: 0.5em 0; padding-left: 1.4em; }
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+.md h1, .md h2, .md h3 { font-weight: 600; margin: 0.9em 0 0.4em; color: var(--color-neon-soft); }
+.md h1 { font-size: 1.25rem; } .md h2 { font-size: 1.1rem; } .md h3 { font-size: 1rem; }
+.md a { color: var(--color-neon); text-decoration: underline; text-underline-offset: 3px; }
+.md code { font-family: var(--font-mono); font-size: 0.85em; }
+.md :not(pre) > code { background: rgb(34 211 238 / 0.08); border: 1px solid rgb(34 211 238 / 0.15); padding: 0.1em 0.35em; border-radius: 6px; }
+.md pre { background: #070b16 !important; border: 1px solid var(--color-line); border-radius: 12px; padding: 0.9em 1em; overflow-x: auto; margin: 0.7em 0; }
+.md pre code.hljs { background: transparent; padding: 0; }
+.md table { border-collapse: collapse; margin: 0.7em 0; display: block; overflow-x: auto; }
+.md th, .md td { border: 1px solid var(--color-line); padding: 0.35em 0.7em; }
+.md blockquote { border-left: 3px solid var(--color-violet); padding-left: 0.8em; color: var(--color-dim); }
