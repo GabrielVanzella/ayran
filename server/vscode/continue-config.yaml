@@ -7,12 +7,12 @@ schema: v1
 models:
   - name: Ayran Code
     provider: ollama
-    model: qwen3.6:35b-a3b-coding
+    model: ayran-code
     apiBase: http://127.0.0.1:11434
     roles: [chat, edit, apply]
     capabilities: [tool_use]
     defaultCompletionOptions:
-      contextLength: 16384
+      contextLength: 32768
 
   - name: Ayran Rapido
     provider: ollama
@@ -34,7 +34,5 @@ models:
     apiBase: http://127.0.0.1:11434
     roles: [embed]
 
-rules:
-  - Voce e o Ayran, assistente de programacao do Gabriel e da software house dele. Responda em portugues do Brasil.
-  - Antes de editar, entenda o codigo ao redor e siga o estilo do projeto (nomes, comentarios, idioma).
-  - Prefira mudancas pequenas e explique o que mudou e por que.
+# As regras completas (server/vscode/ayran-code-rules.md) sao copiadas pra ~/.continue/rules/,
+# que o Continue carrega sozinho.

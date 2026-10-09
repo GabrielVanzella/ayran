@@ -138,7 +138,13 @@ Itens originais da fase:
 - [ ] Painel de status: voz ativa, automação residencial, últimas ações do Ayran
 - [ ] Ícone na bandeja do sistema + atalho de teclado global pra abrir
 - [ ] Iniciar junto com o Windows (autostart)
-- [ ] Extensão do VS Code — Ayran dentro do editor (TypeScript, API de extensões do VS Code)
+- [x] **Ayran como agente de código no VS Code, "igual ao Claude"** (pedido em 2026-10-09):
+  - [x] Modelo `ayran-code` (qwen3.6 coding, contexto 32K) — `server/models/ayran-code.Modelfile`; tool calling testado
+  - [x] Guia de trabalho (práticas de agente: ler antes de editar, mudanças pequenas, verificar, cuidado com ações destrutivas) — `server/vscode/ayran-code-rules.md`
+  - [x] Cline (agente: lê/edita arquivos, roda terminal com aprovação) + Continue (chat lateral, Ctrl+I, autocomplete), os dois com o guia
+  - [ ] RAG com o conhecimento dos projetos (CLAUDE.md, docs) — ver "Passar o conhecimento do Claude"
+  - Limite: não transfere a inteligência do Claude (pesos), só práticas e contexto; no notebook é ~14 tok/s
+- [ ] Extensão do VS Code própria — Ayran dentro do editor (TypeScript, API de extensões do VS Code)
   - [ ] Painel lateral de chat (Webview), reaproveitando a UI do hub central
   - [ ] Acesso ao contexto do editor (arquivo aberto, seleção, workspace)
   - [ ] Comandos customizados na paleta (ex: "Ayran: explicar", "Ayran: corrigir")
