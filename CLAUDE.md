@@ -4,9 +4,9 @@ Projeto de IA pessoal local. Antes de qualquer ação, leia **REQUIREMENTS.md** 
 
 ## Contexto essencial
 
-- **Dono**: Gabriel, uso pessoal exclusivo
+- **Dono**: Gabriel (admin); personalizada pra ele e pros projetos dele, mas outras pessoas também usam (multiusuário + API)
 - **Nome da IA**: Ayran (masculino, voz masculina)
-- **Hardware**: computador de casa — confirmar RAM/armazenamento reais e atualizar a seção "Situação de hardware" do REQUIREMENTS.md se ainda não tiver sido feito
+- **Hardware**: servidor provisório = notebook i9 / 32 GB / NVIDIA T1200 4 GB, ligado 24/7; servidor definitivo = PC de casa em montagem. Detalhes na seção "Situação de hardware" do REQUIREMENTS.md
 - **Arquitetura**: um só ponto de entrada (chat/hub), um roteador escolhe o modelo certo por trás (texto geral, uncensored, raciocínio, imagem, vídeo, voz, ou escala pro Claude) — ver seção "Arquitetura" no REQUIREMENTS.md
 
 ## Como continuar o trabalho

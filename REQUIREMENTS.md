@@ -7,7 +7,8 @@
 
 - **Nome**: Ayran
 - **Gênero/voz**: masculino
-- **Dono/usuário**: Gabriel (uso pessoal exclusivo)
+- **Dono/administrador**: Gabriel
+- **Usuários**: personalizada pro Gabriel e pros projetos dele, mas **outras pessoas também vão usar** (atualizado em 2026-10-09 — antes era uso pessoal exclusivo)
 
 ## Objetivo geral
 
@@ -33,14 +34,26 @@ Eu (Gabriel) só converso com o **Ayran**, num lugar só (chat/hub — Fase 2.5)
 | Comando de voz | Pipeline STT → um dos modelos acima |
 | Tarefa complexa demais pro local | Escala pro Claude (Fase 6.5) |
 
-## Situação de hardware (ponto de partida)
+## Situação de hardware
 
-- Computador de casa: **CPU apenas, sem GPU dedicada**
+### Servidor atual (provisório) — notebook, confirmado em 2026-10-09
+- CPU: Intel Core i9-11950H (8 núcleos / 16 threads)
+- RAM: 32 GB
+- GPU: **NVIDIA T1200 Laptop, 4 GB VRAM** (driver 580, CUDA ok) + Intel UHD integrada
+- Disco: ~410 GB livres no C:
+- SO: Windows 11 Pro
+- Fica **ligado 24/7** como servidor do Ayran até o PC de casa ficar pronto
 - Implicações:
-  - Texto/chat: viável, boa velocidade com modelos de 3B-8B
-  - Imagem: viável mas lenta (minutos por imagem)
-  - Vídeo: praticamente inviável sem GPU
-- Upgrade futuro considerado: GPU usada (ex: RTX 3060 12GB) e/ou aluguel de GPU por hora (RunPod/Vast.ai) para tarefas pesadas pontuais (vídeo, fine-tuning)
+  - Texto/chat: modelos até ~4B inteiros na GPU (rápido); 7-8B com offload parcial pra RAM (usável, ~5-12 tok/s); 13-14B só em CPU (lento)
+  - Imagem: viável (SD 1.5 razoável, SDXL lento mas possível com 4 GB)
+  - STT (Whisper): acelera com GPU
+  - Vídeo: ainda inviável com 4 GB VRAM
+  - Fine-tuning: só QLoRA leve em modelos pequenos
+
+### Servidor definitivo — PC de casa (em montagem)
+- Specs a definir. Vai substituir o notebook como servidor
+- Toda a configuração precisa ser **portável** (scripts/config versionados no repo) pra migrar sem refazer tudo
+- Upgrade considerado: GPU com mais VRAM (ex: RTX 3060 12GB) e/ou aluguel de GPU por hora (RunPod/Vast.ai) para tarefas pesadas pontuais (vídeo, fine-tuning)
 
 ## Fases do projeto
 
@@ -50,6 +63,25 @@ Eu (Gabriel) só converso com o **Ayran**, num lugar só (chat/hub — Fase 2.5)
 - [ ] Baixar modelo "uncensored" para escrita criativa (ex: `dolphin-llama3`)
 - [ ] Testar ambos via terminal (`ollama run`)
 - [ ] Instalar Open WebUI (interface de chat local, tipo ChatGPT) por cima do Ollama
+
+### Fase 1.5 — Servidor 24/7, multiusuário, API e acesso remoto (adicionado em 2026-10-09)
+Arquitetura: tudo roda na máquina servidora; só a camada com autenticação fica exposta.
+
+```
+[usuários / meus projetos, de qualquer lugar] ──► túnel (HTTPS) ──► Open WebUI (contas + chaves de API) ──► Ollama (só localhost)
+```
+
+- [ ] Máquina como servidor: não suspender/hibernar na tomada, tampa fechada = não fazer nada, Ollama e Open WebUI iniciando com o Windows (sem precisar de login)
+- [ ] Notebook 24/7: limitar carga da bateria (~60-80%, via BIOS/utilitário do fabricante) e cuidar de temperatura/ventilação
+- [ ] Windows Update: horário ativo + reinício controlado, serviços voltam sozinhos depois do reboot
+- [ ] Ollama **nunca exposto direto** (não tem autenticação) — escuta só em `127.0.0.1:11434`
+- [ ] Multiusuário: contas no Open WebUI (eu = admin, cadastro de novos usuários só com aprovação)
+- [ ] API pros meus projetos: chave de API por usuário/projeto no Open WebUI, endpoint compatível com OpenAI (`/api/chat/completions`)
+- [ ] Acesso remoto:
+  - [ ] Cloudflare Tunnel — endereço público HTTPS pra usuários e projetos externos (sem abrir porta no roteador)
+  - [ ] Tailscale — acesso administrativo privado (eu)
+- [ ] Portabilidade: scripts de instalação/config versionados no repo, backup dos dados do Open WebUI (usuários, chats, chaves) pra migrar pro PC de casa
+- [ ] Documentar como os projetos consomem a API (exemplos Python/JS)
 
 ### Fase 2 — Customização (deixar a IA "minha")
 - [ ] Criar Modelfile próprio (system prompt definindo o Ayran como assistente masculino, personalidade, parâmetros) em cima do modelo base
