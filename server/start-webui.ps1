@@ -38,4 +38,9 @@ $Port     = if ($env:AYRAN_PORT) { $env:AYRAN_PORT } else { '8080' }
 $exe = Join-Path $AyranHome 'venv\Scripts\open-webui.exe'
 # Via cmd: no PowerShell 5.1 o stderr de executavel nativo vira erro e derruba o script.
 $log = Join-Path $LogDir 'webui.log'
-cmd /c "`"$exe`" serve --host $BindHost --port $Port >> `"$log`" 2>&1"
+# Vigia: o Agendador nao reinicia processo que cai depois de iniciado, entao o loop faz isso.
+while ($true) {
+    cmd /c "`"$exe`" serve --host $BindHost --port $Port >> `"$log`" 2>&1"
+    Add-Content $log "$(Get-Date -Format s) [vigia] Open WebUI saiu (codigo $LASTEXITCODE), reiniciando em 5s"
+    Start-Sleep 5
+}

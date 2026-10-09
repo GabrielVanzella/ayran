@@ -14,4 +14,9 @@ $Port = if ($env:AYRAN_HUB_PORT) { $env:AYRAN_HUB_PORT } else { '3000' }
 Set-Location $backend
 # Via cmd: no PowerShell 5.1 o stderr de executavel nativo vira erro e derruba o script.
 $log = Join-Path $LogDir 'hub.log'
-cmd /c "`"$py`" -m uvicorn main:app --host $BindHost --port $Port --proxy-headers >> `"$log`" 2>&1"
+# Vigia: o Agendador nao reinicia processo que cai depois de iniciado, entao o loop faz isso.
+while ($true) {
+    cmd /c "`"$py`" -m uvicorn main:app --host $BindHost --port $Port --proxy-headers >> `"$log`" 2>&1"
+    Add-Content $log "$(Get-Date -Format s) [vigia] Central saiu (codigo $LASTEXITCODE), reiniciando em 5s"
+    Start-Sleep 5
+}

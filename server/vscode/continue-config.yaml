@@ -1,0 +1,40 @@
+# Configuracao da extensao Continue (VS Code) pro Ayran.
+# Copiada pra ~/.continue/config.yaml. Neste PC fala direto com o Ollama local.
+name: Ayran
+version: 0.1.0
+schema: v1
+
+models:
+  - name: Ayran Code
+    provider: ollama
+    model: qwen3.6:35b-a3b-coding
+    apiBase: http://127.0.0.1:11434
+    roles: [chat, edit, apply]
+    capabilities: [tool_use]
+    defaultCompletionOptions:
+      contextLength: 16384
+
+  - name: Ayran Rapido
+    provider: ollama
+    model: qwen3.5:4b
+    apiBase: http://127.0.0.1:11434
+    roles: [chat, edit]
+    defaultCompletionOptions:
+      contextLength: 8192
+
+  - name: Ayran Autocomplete
+    provider: ollama
+    model: qwen2.5-coder:1.5b
+    apiBase: http://127.0.0.1:11434
+    roles: [autocomplete]
+
+  - name: Ayran Embeddings
+    provider: ollama
+    model: bge-m3
+    apiBase: http://127.0.0.1:11434
+    roles: [embed]
+
+rules:
+  - Voce e o Ayran, assistente de programacao do Gabriel e da software house dele. Responda em portugues do Brasil.
+  - Antes de editar, entenda o codigo ao redor e siga o estilo do projeto (nomes, comentarios, idioma).
+  - Prefira mudancas pequenas e explique o que mudou e por que.
