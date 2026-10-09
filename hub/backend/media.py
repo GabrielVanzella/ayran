@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 COMFY_URL = "http://127.0.0.1:8188"
 OLLAMA_URL = "http://127.0.0.1:11434"
 PROMPT_MODEL = "qwen3.5:4b"
-CHECKPOINT = "DreamShaper_8_pruned.safetensors"
+CHECKPOINT = "chilloutmix_NiPrunedFp16Fix.safetensors"
 VIDEO_MIN_VRAM_GB = 16
 WORKFLOWS = Path(__file__).parent / "workflows"
 

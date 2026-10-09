@@ -40,6 +40,10 @@ class Pipe:
         CHAT_MODEL: str = Field(default="qwen3.5:4b", description="Conversa do dia a dia (rapido)")
         REASONING_MODEL: str = Field(default="qwen3.5:9b", description="Problemas dificeis (pensa antes)")
         CODE_MODEL: str = Field(default="qwen3.6:35b-a3b-coding", description="Codigo (pesado)")
+        DOLPHIN_MODEL: str = Field(
+            default="GFalcon-UA/dolphin3-mistral:latest",
+            description="Dolphin 3.0 Mistral 24B (uso manual exclusivo do admin)",
+        )
         ROUTER_MODEL: str = Field(default="qwen3.5:4b", description="Modelo que classifica o pedido")
         NUM_CTX: int = Field(default=8192)
         SHOW_ROUTE: bool = Field(default=True, description="Mostra qual especialista respondeu")
@@ -107,17 +111,33 @@ class Pipe:
     # ---------- entry point ----------
 
     async def pipe(
-        self, body: dict, __event_emitter__=None, __task__: Optional[str] = None
+        self, body: dict, __event_emitter__=None, __task__: Optional[str] = None, __user__: Optional[dict] = None
     ) -> AsyncGenerator[str, None] | str:
         messages = self._to_ollama_messages(body.get("messages", []))
         if not any(m["role"] == "system" for m in messages):
             messages.insert(0, {"role": "system", "content": PERSONA})
+
+        requested_dolphin = False
+        if not __task__:
+            last_user_text = self._last_user_text(body.get("messages", []))
+            command = last_user_text.lstrip().split(maxsplit=1)
+            requested_dolphin = bool(command) and command[0].lower() == "/dolphin"
+            if requested_dolphin and (__user__ or {}).get("role") != "admin":
+                return "O modo criativo está disponível apenas para o administrador."
+            if requested_dolphin:
+                for message in reversed(messages):
+                    if message["role"] == "user" and isinstance(message["content"], str):
+                        message["content"] = message["content"].lstrip()[len("/dolphin"):].lstrip()
+                        break
 
         timeout = aiohttp.ClientTimeout(total=None, sock_read=600)
         session = aiohttp.ClientSession(timeout=timeout)
 
         if __task__:
             route = "CONVERSA"  # titulos/tags etc: sempre o modelo leve
+        elif requested_dolphin:
+            await self._status(__event_emitter__, "Ayran usando modo criativo (admin)...", False)
+            route = "CRIATIVO"
         else:
             await self._status(__event_emitter__, "Ayran escolhendo o especialista...", False)
             route = await self._route(session, self._last_user_text(body.get("messages", [])))
@@ -126,6 +146,7 @@ class Pipe:
             "CODIGO": (self.valves.CODE_MODEL, False, "codigo"),
             "RACIOCINIO": (self.valves.REASONING_MODEL, True, "raciocinio"),
             "CONVERSA": (self.valves.CHAT_MODEL, False, "conversa"),
+            "CRIATIVO": (self.valves.DOLPHIN_MODEL, False, "criativo admin"),
         }[route]
 
         payload = {

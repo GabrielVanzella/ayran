@@ -31,7 +31,7 @@ Eu (Gabriel) só converso com o **Ayran**, num lugar só (chat/hub — Fase 2.5)
 | Código (pesado, principal pra desenvolvimento) | `qwen3.6:35b-a3b-coding` (MoE, ~3B ativos, roda em RAM+GPU) |
 | Autocomplete de código no VS Code | `qwen2.5-coder:1.5b` |
 | Embeddings pro RAG (busca nos meus documentos, multilíngue) | `bge-m3` |
-| Escrita criativa sem restrição | Dolphin (opcional, ainda não baixado) |
+| Escrita criativa (admin, selecao manual) | Dolphin 3.0 Mistral 24B (`GFalcon-UA/dolphin3-mistral`, quant Q4 ~13 GB) |
 | Raciocínio complexo (lógica/matemática) | Modelo de raciocínio (DeepSeek-R1/QwQ) |
 | Gerar imagem | Stable Diffusion/SDXL (Fase 4) |
 | Gerar vídeo | Modelo de vídeo (Fase 5) |
@@ -67,6 +67,7 @@ Eu (Gabriel) só converso com o **Ayran**, num lugar só (chat/hub — Fase 2.5)
 - [x] Instalar Ollama (0.40.1)
 - [x] Baixar modelos definidos em 2026-10-09 (ver tabela da "Arquitetura"): `qwen3.5:4b`, `qwen3.5:9b`, `qwen3.6:35b-a3b-coding`, `qwen2.5-coder:1.5b`, `bge-m3`
 - [x] Baixar modelo "uncensored" para escrita criativa (`dolphin3`, 8B) — **só para o admin**, fora do roteador automático (outros usuários não podem acessar)
+- [x] Baixar Dolphin 3.0 Mistral 24B — **só para o admin**, opcao manual fora do roteador automatico
 - [x] Testar via terminal/API (qwen3.5:4b ~19 tok/s; qwen3.6 coding ~14 tok/s, ~40s pra carregar)
 - [x] Instalar Open WebUI (0.11.4, venv em `%USERPROFILE%\ayran-server`, scripts em `server/`)
 
@@ -189,6 +190,14 @@ Itens originais da fase:
   - [ ] Feedback 👍/👎 nas respostas, virando dataset de correções
   - [ ] Rodar novo fine-tuning (LoRA) periodicamente incorporando esse feedback
   - [ ] Revisar/trocar o modelo base conforme saem versões melhores (ver "Descobertas recentes" abaixo)
+- [ ] **IA treinando IA** (pedido em 2026-10-09) — ciclo automático professor → aluno:
+  1. Professor (`qwen3.6` 35B, Apache 2.0) gera respostas para tarefas reais da VZ Tecnologia (dados sintéticos)
+  2. Filtro: testes automáticos (código que compila/passa), IA juíza dando nota (RLAIF/DPO) e revisão humana por amostragem
+  3. As melhores viram dataset → LoRA no modelo menor (ex: `qwen3.5:4b`) = destilação
+  4. Benchmark antes/depois; só promove o novo modelo se melhorou
+  - Geração de dados roda no notebook (lento); o treino precisa da GPU de 24 GB ou GPU alugada
+  - **Restrição**: professor só pode ser modelo cuja licença permita (Qwen/Apache ok). Respostas do Claude, ChatGPT ou Gemini **não** podem virar dado de treino (termos de uso proíbem)
+  - Primeiro objetivo sugerido: deixar o modelo de 4B melhor em responder sobre os projetos da VZ
 
 ### Fase 7 — Técnicas avançadas para maximizar a inteligência
 - [ ] Modelo de raciocínio (reasoning model) para tarefas complexas — ex: DeepSeek-R1 destilado ou QwQ — "pensa" passo a passo antes de responder, mais preciso em lógica/matemática/código (mais lento, mas não exige mais memória)
@@ -218,7 +227,7 @@ Itens originais da fase:
 | Modelos de texto | Qwen3.5 (4B/9B), Qwen3.6 coding (35B-A3B), Qwen2.5-Coder 1.5B (autocomplete) — ver "Arquitetura" |
 | Embeddings (RAG) | bge-m3 |
 | VS Code (imediato) | Extensão Continue → API do Ayran |
-| Modelo uncensored/criativo | Dolphin (`dolphin-llama3`) |
+| Modelo criativo admin-only | Dolphin 3 (`dolphin3`, Llama 3.1 8B) e Dolphin 3.0 Mistral 24B (`GFalcon-UA/dolphin3-mistral`) |
 | STT (voz → texto) | Whisper (local) |
 | TTS (texto → voz) | Piper |
 | Wake word | openWakeWord |
