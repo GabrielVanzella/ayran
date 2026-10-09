@@ -158,12 +158,12 @@ Itens originais da fase:
 
 ### Fase 4 — Geração de imagem (iniciada em 2026-10-09, "mesmo que seja limitado e demore")
 - [x] Avaliar necessidade de GPU — notebook (4 GB) roda SD 1.5; SDXL/Flux só no PC novo
-- [ ] Instalar ComfyUI como servidor local (127.0.0.1:8188, `--lowvram`, `server/start-comfyui.ps1`)
-- [ ] Baixar modelo aberto — DreamShaper 8 (SD 1.5, licença CreativeML OpenRAIL-M, permite uso comercial)
-- [ ] Aba **Criar → Imagem** na central: prompt em português (o Ayran traduz/melhora pro inglês), formatos, estilos, galeria, download
-- [ ] Fila de geração (uma por vez) + liberar a GPU do Ollama antes de gerar
-- [ ] Filtro de conteúdo: bloquear pedidos sexuais explícitos e qualquer coisa envolvendo menores (servidor multiusuário da empresa)
-- [ ] Testar geração local
+- [x] Instalar ComfyUI como servidor local (127.0.0.1:8188, `--lowvram`, `server/start-comfyui.ps1`)
+- [x] Baixar modelo aberto — DreamShaper 8 (SD 1.5, licença CreativeML OpenRAIL-M, permite uso comercial)
+- [x] Aba **Criar → Imagem** na central: prompt em português (o Ayran traduz/melhora pro inglês), formatos, estilos, galeria, download
+- [x] Fila de geração (uma por vez) + liberar a GPU do Ollama antes de gerar
+- [x] Filtro de conteúdo: bloquear pedidos sexuais explícitos e qualquer coisa envolvendo menores (servidor multiusuário da empresa)
+- [x] Testar geração local (2026-10-09: paisagem 768x512, 25 passos, ~36s incluindo tradução do prompt)
 - **Vídeo (Fase 5) já preparado na mesma arquitetura**: aba **Criar → Vídeo** fica desabilitada até detectar GPU com ≥16 GB; quando a placa de 24 GB chegar, só adicionar o workflow/modelo de vídeo
 
 ### Fase 5 — Geração de vídeo
