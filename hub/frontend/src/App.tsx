@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Home as HomeIcon, Lightbulb, LogOut, MessageSquare, Music2, Newspaper, Settings2 } from 'lucide-react'
+import { Home as HomeIcon, Lightbulb, LogOut, MessageSquare, Music2, Newspaper, Palette, Settings2 } from 'lucide-react'
+import Create from './components/Create'
 import Login from './components/Login'
 import Home from './components/Home'
 import Chat from './components/Chat'
@@ -21,11 +22,12 @@ import {
   type User,
 } from './lib/api'
 
-export type Tab = 'home' | 'chat' | 'news' | 'ideas' | 'music'
+export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'music'
 
 const NAV: { id: Tab; label: string; icon: typeof HomeIcon }[] = [
   { id: 'home', label: 'Início', icon: HomeIcon },
   { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'create', label: 'Criar', icon: Palette },
   { id: 'news', label: 'Notícias', icon: Newspaper },
   { id: 'ideas', label: 'Ideias', icon: Lightbulb },
   { id: 'music', label: 'Música', icon: Music2 },
@@ -34,6 +36,7 @@ const NAV: { id: Tab; label: string; icon: typeof HomeIcon }[] = [
 const TITLES: Record<Tab, string> = {
   home: 'Central',
   chat: 'Chat',
+  create: 'Criar',
   news: 'Notícias',
   ideas: 'Ideias',
   music: 'Música',
@@ -155,6 +158,7 @@ export default function App() {
           <div className={tab === 'chat' ? 'h-full' : 'hidden'}>
             <Chat userName={user.name} pendingPrompt={pendingPrompt} onPromptConsumed={consumed} onAuthError={logout} />
           </div>
+          {tab === 'create' && <Create onAuthError={logout} />}
           {tab === 'news' && <News onAuthError={logout} />}
           {tab === 'ideas' && <Ideas onAuthError={logout} onDevelop={ask} />}
           {tab === 'music' && settings && <Music current={settings.spotify} onChange={changeMusic} />}

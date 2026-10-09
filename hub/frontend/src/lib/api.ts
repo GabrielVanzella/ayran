@@ -210,6 +210,41 @@ export const getSettings = () => request<Settings>('/api/settings')
 export const putSettings = (s: Partial<Settings>) =>
   request<Settings>('/api/settings', { method: 'PUT', body: JSON.stringify(s) })
 
+// ---------- imagem / video ----------
+
+export type MediaCapabilities = {
+  comfy_online: boolean
+  vram_gb: number
+  image: boolean
+  video: boolean
+  video_min_vram_gb: number
+  sizes: string[]
+  styles: string[]
+}
+export type MediaJob = {
+  id: string
+  kind: 'image' | 'video'
+  prompt: string
+  final_prompt: string
+  params: { size?: string; style?: string; seed?: number }
+  status: 'na_fila' | 'gerando' | 'pronto' | 'erro'
+  error: string
+  outputs: string[]
+  created_at: number
+}
+
+export const getMediaCapabilities = () => request<MediaCapabilities>('/api/media/capabilities')
+export const listMedia = () => request<MediaJob[]>('/api/media')
+export const createImage = (body: { prompt: string; size: string; style: string; enhance: boolean }) =>
+  request<{ id: string }>('/api/media/image', { method: 'POST', body: JSON.stringify(body) })
+export const deleteMedia = (id: string) => request(`/api/media/${id}`, { method: 'DELETE' })
+
+export async function mediaFileUrl(id: string, n: number): Promise<string> {
+  const res = await fetch(`/api/media/${id}/file/${n}`, { headers: { Authorization: `Bearer ${getToken()}` } })
+  if (!res.ok) throw new Error('Imagem indisponível')
+  return URL.createObjectURL(await res.blob())
+}
+
 export async function health(): Promise<boolean> {
   try {
     return (await fetch('/owui/health')).ok

@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
 from feeds import TOPICS
+from media import build_router as build_media_router, init_media_db
 
 OWUI_URL = os.environ.get("OWUI_URL", "http://127.0.0.1:8080")
 AYRAN_HOME = Path(os.environ.get("AYRAN_HOME", Path.home() / "ayran-server"))
@@ -59,13 +60,16 @@ def init_db():
             create table if not exists settings (user_id text primary key, data text not null);
             """
         )
+        init_media_db(conn)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     app.state.http = httpx.AsyncClient(timeout=httpx.Timeout(10, read=None), follow_redirects=False)
+    media_worker = asyncio.create_task(media_router.worker())
     yield
+    media_worker.cancel()
     await app.state.http.aclose()
 
 
@@ -148,6 +152,12 @@ async def owui_proxy(path: str, request: Request):
     out_headers = {k: v for k, v in r.headers.items() if k.lower() not in HOP_HEADERS}
     return StreamingResponse(r.aiter_raw(), status_code=r.status_code, headers=out_headers,
                              background=BackgroundTask(r.aclose))
+
+
+# ---------------- imagem / video ----------------
+
+media_router = build_media_router(db, current_user, AYRAN_HOME / "hub" / "media")
+app.include_router(media_router)
 
 
 # ---------------- login automatico (so no proprio servidor) ----------------

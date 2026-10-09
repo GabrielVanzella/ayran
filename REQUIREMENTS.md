@@ -55,7 +55,9 @@ Eu (Gabriel) só converso com o **Ayran**, num lugar só (chat/hub — Fase 2.5)
   - Fine-tuning: só QLoRA leve em modelos pequenos
 
 ### Servidor definitivo — PC de casa (em montagem)
-- Specs a definir. Vai substituir o notebook como servidor
+- Perfil: intermediário, verba limitada, tem que durar e **atender clientes** (API da Fase 1.6)
+- Proposta de peças passada em 2026-10-09 (prioridade: VRAM da GPU > RAM > resto; plataforma AM5 pra upgrade; fonte e placa-mãe preparadas pra 2ª GPU no futuro). Specs finais a definir após orçamento
+- Domínio: **vztecnologia.com.br** (registro.br, em processamento em 2026-10-09) → Cloudflare Tunnel
 - Toda a configuração precisa ser **portável** (scripts/config versionados no repo) pra migrar sem refazer tudo
 - Upgrade considerado: GPU com mais VRAM (ex: RTX 3060 12GB) e/ou aluguel de GPU por hora (RunPod/Vast.ai) para tarefas pesadas pontuais (vídeo, fine-tuning)
 
@@ -154,11 +156,15 @@ Itens originais da fase:
   - [ ] Criar tools que conectam o LLM ao Home Assistant (ex: `ligar_luz(comodo)`, `criar_rotina(nome)`)
   - [ ] Rotina exemplo: "olá [nome], deixa o escritório pronto" → dispara várias ações de uma vez (luz, música, etc.)
 
-### Fase 4 — Geração de imagem
-- [ ] Avaliar necessidade de GPU (CPU vai ser lento)
-- [ ] Instalar ComfyUI
-- [ ] Baixar modelo aberto (Stable Diffusion / SDXL / Flux)
+### Fase 4 — Geração de imagem (iniciada em 2026-10-09, "mesmo que seja limitado e demore")
+- [x] Avaliar necessidade de GPU — notebook (4 GB) roda SD 1.5; SDXL/Flux só no PC novo
+- [ ] Instalar ComfyUI como servidor local (127.0.0.1:8188, `--lowvram`, `server/start-comfyui.ps1`)
+- [ ] Baixar modelo aberto — DreamShaper 8 (SD 1.5, licença CreativeML OpenRAIL-M, permite uso comercial)
+- [ ] Aba **Criar → Imagem** na central: prompt em português (o Ayran traduz/melhora pro inglês), formatos, estilos, galeria, download
+- [ ] Fila de geração (uma por vez) + liberar a GPU do Ollama antes de gerar
+- [ ] Filtro de conteúdo: bloquear pedidos sexuais explícitos e qualquer coisa envolvendo menores (servidor multiusuário da empresa)
 - [ ] Testar geração local
+- **Vídeo (Fase 5) já preparado na mesma arquitetura**: aba **Criar → Vídeo** fica desabilitada até detectar GPU com ≥16 GB; quando a placa de 24 GB chegar, só adicionar o workflow/modelo de vídeo
 
 ### Fase 5 — Geração de vídeo
 - [ ] Decidir caminho: comprar GPU vs. alugar GPU na nuvem por hora
