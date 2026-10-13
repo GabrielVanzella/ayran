@@ -16,7 +16,8 @@ $tasks = @(
     @{ Name = 'Ayran - Ollama'; Script = 'start-ollama.ps1'; Delay = 'PT10S' },
     @{ Name = 'Ayran - Open WebUI'; Script = 'start-webui.ps1'; Delay = 'PT40S' },
     @{ Name = 'Ayran - Central'; Script = 'start-hub.ps1'; Delay = 'PT50S' },
-    @{ Name = 'Ayran - ComfyUI'; Script = 'start-comfyui.ps1'; Delay = 'PT60S' }
+    @{ Name = 'Ayran - ComfyUI'; Script = 'start-comfyui.ps1'; Delay = 'PT60S' },
+    @{ Name = 'Ayran - Tunel'; Script = 'start-tunnel.ps1'; Delay = 'PT70S' }
 )
 
 foreach ($t in $tasks) {
