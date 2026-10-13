@@ -139,3 +139,18 @@ svg.lucide {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* acessibilidade e toque */
+:root { color-scheme: dark; } /* controles nativos (select, scrollbar) no tema escuro */
+button, a, input, select, summary, [role='button'] { touch-action: manipulation; }
+h1, h2, h3 { text-wrap: balance; }
+:where(button, a, summary, select):focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.9);
+  outline-offset: 2px;
+}
+.skip-link {
+  position: fixed; left: 1rem; top: 1rem; z-index: 100;
+  transform: translateY(-200%);
+  background: #fff; color: #070b12; padding: 0.6rem 1rem; border-radius: 999px; font-weight: 500;
+}
+.skip-link:focus { transform: none; }

@@ -102,6 +102,10 @@ export default function Home(p: Props) {
           key={p.scene}
           src={sceneUrl(p.scene)}
           alt=""
+          width={768}
+          height={512}
+          fetchPriority="high"
+          decoding="async"
           className="absolute inset-0 size-full object-cover"
           onError={(e) => (e.currentTarget.style.display = 'none')}
         />
@@ -109,7 +113,7 @@ export default function Home(p: Props) {
 
         <div className="relative flex h-full min-h-[460px] flex-col justify-between gap-6 p-5 sm:p-7">
           {/* escolher a cena */}
-          <div className="scroll-thin -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Cena de fundo">
+          <div className="scroll-thin -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Cena de fundo">
             <ScenePill active={!p.pinned} onClick={() => p.onPin(null)}>
               Automático
             </ScenePill>
@@ -128,9 +132,9 @@ export default function Home(p: Props) {
             <p className="glow-text mt-1 text-7xl font-light tabular-nums leading-none sm:text-8xl">
               {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </p>
-            <h1 className="glow-text mt-3 text-2xl font-medium sm:text-3xl">
+            <h2 className="glow-text mt-3 text-2xl font-medium sm:text-3xl">
               {greeting(now.getHours())}, {first}.
-            </h1>
+            </h2>
             <p className="mt-1 flex items-center gap-2 text-sm text-white/75">
               <span className={`size-2 rounded-full ${p.online ? 'bg-emerald-400' : 'bg-red-400'}`} />
               {p.online ? 'Ayran online e pronto.' : 'Ayran offline. Verifique o servidor.'}
@@ -148,6 +152,9 @@ export default function Home(p: Props) {
                 onChange={(e) => setAsk(e.target.value)}
                 placeholder="Pergunte ao Ayran…"
                 aria-label="Pergunte ao Ayran"
+                name="pergunta"
+                autoComplete="off"
+                enterKeyHint="send"
                 className="min-w-0 flex-1 bg-transparent px-4 py-2 outline-none placeholder:text-white/55"
               />
               <button className="grid size-10 place-items-center rounded-full bg-white text-void transition hover:bg-white/90" aria-label="Enviar">
@@ -289,8 +296,7 @@ export default function Home(p: Props) {
 function ScenePill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
-      role="tab"
-      aria-selected={active}
+      aria-pressed={active}
       onClick={onClick}
       className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs transition ${
         active ? 'bg-white text-void' : 'border border-white/20 bg-black/30 text-white/85 backdrop-blur hover:bg-black/50'

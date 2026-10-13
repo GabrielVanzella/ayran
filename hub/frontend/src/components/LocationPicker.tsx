@@ -43,6 +43,8 @@ export default function LocationPicker({ onPick, onClose, onAuthError }: Props) 
         <Search className="size-4 text-dim" />
         <input
           autoFocus
+          name="cidade"
+          autoComplete="off"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar cidade…"
@@ -62,7 +64,7 @@ export default function LocationPicker({ onPick, onClose, onAuthError }: Props) 
       >
         <Crosshair className="size-4" /> Usar minha localização
       </button>
-      {error && <p className="text-xs text-dim">{error}</p>}
+      {error && <p role="status" className="text-xs text-dim">{error}</p>}
       <ul className="space-y-1">
         {results.map((c) => (
           <li key={`${c.lat},${c.lon}`}>

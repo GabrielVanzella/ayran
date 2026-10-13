@@ -100,7 +100,7 @@ export default function Team({ onAuthError }: { onAuthError: () => void }) {
         </button>
       </header>
 
-      {error && <p className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
 
       {access && <AccessCard access={access} onClose={() => setAccess(null)} />}
 
@@ -214,16 +214,16 @@ function NewUserForm({ onCancel, onCreated, onAuthError }: { onCancel: () => voi
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-sm text-dim">
           Nome
-          <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} placeholder="Nome do funcionário" className={`${field} mt-1 text-ink`} />
+          <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} name="nome" autoComplete="off" placeholder="Ex.: Maria Souza…" className={`${field} mt-1 text-ink`} />
         </label>
         <label className="block text-sm text-dim">
           E-mail
-          <input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" placeholder="nome@vztecnologia.com.br" className={`${field} mt-1 text-ink`} />
+          <input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" name="email" autoComplete="off" spellCheck={false} placeholder="nome@vztecnologia.com.br" className={`${field} mt-1 text-ink`} />
         </label>
         <label className="block text-sm text-dim">
           Senha provisória
           <div className="mt-1 flex gap-2">
-            <input value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} className={`${field} font-mono text-ink`} />
+            <input value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} name="senha" autoComplete="off" spellCheck={false} className={`${field} font-mono text-ink`} />
             <button type="button" onClick={() => setPassword(generatePassword())} className="shrink-0 rounded-full border border-white/20 px-4 text-xs text-ink transition hover:bg-white/10">
               Gerar outra
             </button>
@@ -231,13 +231,13 @@ function NewUserForm({ onCancel, onCreated, onAuthError }: { onCancel: () => voi
         </label>
         <label className="block text-sm text-dim">
           Papel
-          <select value={role} onChange={(e) => setRole(e.target.value as 'user' | 'admin')} className={`${field} mt-1 text-ink`}>
+          <select name="papel" value={role} onChange={(e) => setRole(e.target.value as 'user' | 'admin')} className={`${field} mt-1 text-ink`}>
             <option value="user" className="bg-[#101826]">Funcionário</option>
             <option value="admin" className="bg-[#101826]">Administrador (vê e gerencia tudo)</option>
           </select>
         </label>
       </div>
-      {error && <p className="rounded-2xl bg-red-500/10 px-4 py-2.5 text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="rounded-2xl bg-red-500/10 px-4 py-2.5 text-sm text-red-300">{error}</p>}
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="rounded-full border border-white/20 px-5 py-2.5 text-sm transition hover:bg-white/10">
           Cancelar

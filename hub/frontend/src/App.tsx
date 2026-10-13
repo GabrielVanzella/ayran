@@ -176,6 +176,7 @@ export default function App() {
 
   return (
     <div data-scene={scene} className="relative h-full overflow-hidden">
+      <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
       <Backdrop scene={scene} />
 
       <div className="relative mx-auto flex h-full max-w-[1600px] p-2 sm:p-4">
@@ -203,6 +204,9 @@ export default function App() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Pergunte algo ao Ayran…"
                 aria-label="Pergunte algo ao Ayran"
+                name="busca"
+                autoComplete="off"
+                enterKeyHint="send"
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-dim"
               />
             </form>
@@ -259,7 +263,7 @@ export default function App() {
               </div>
             </nav>
 
-            <main className="scroll-thin min-h-0 min-w-0 flex-1 overflow-y-auto px-1 pb-3 sm:px-2">
+            <main id="conteudo" tabIndex={-1} className="scroll-thin min-h-0 min-w-0 flex-1 overflow-y-auto px-1 pb-3 outline-none sm:px-2">
               <h1 className="sr-only">Ayran — {TITLES[tab]}</h1>
               {tab === 'home' && (
                 <Home
