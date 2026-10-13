@@ -18,7 +18,8 @@ export type Idea = {
   created_at: number
   updated_at: number
 }
-export type Settings = { spotify: string; topics: string[] }
+export type Location = { name: string; lat: number; lon: number }
+export type Settings = { spotify: string; topics: string[]; location: Location | null }
 
 export const AYRAN_MODEL = 'ayran'
 
@@ -257,6 +258,30 @@ export async function mediaFileUrl(id: string, n: number): Promise<string> {
   if (!res.ok) throw new Error('Imagem indisponível')
   return URL.createObjectURL(await res.blob())
 }
+
+// ---------- clima / servidor ----------
+
+export type Scene = 'praia' | 'sol' | 'nublado' | 'chuva' | 'tempestade' | 'neblina' | 'noite' | 'frio'
+export type DayForecast = { date: string; code: number; label: string; max: number; min: number; rain: number | null }
+export type Weather = {
+  timezone: string
+  scene: Scene
+  current: { temp: number; feels: number; humidity: number; wind: number; is_day: boolean; code: number; label: string }
+  daily: DayForecast[]
+}
+export type CityResult = { name: string; region: string; country: string; lat: number; lon: number }
+export type SystemInfo = {
+  cpu: number
+  ram: { used_gb: number; total_gb: number; percent: number }
+  disk: { free_gb: number; total_gb: number; percent: number }
+  gpu: { name: string; used_mb: number; total_mb: number; util: number; temp: number } | null
+  model: string | null
+  services: { id: string; label: string; hint: string; up: boolean }[]
+}
+
+export const getWeather = (lat: number, lon: number) => request<Weather>(`/api/weather?lat=${lat}&lon=${lon}`)
+export const searchCities = (q: string) => request<CityResult[]>(`/api/geocode?q=${encodeURIComponent(q)}`)
+export const getSystem = () => request<SystemInfo>('/api/system')
 
 export async function health(): Promise<boolean> {
   try {

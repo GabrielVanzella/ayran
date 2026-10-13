@@ -95,13 +95,13 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
         <VideoLocked caps={caps} />
       ) : (
         <>
-          <form onSubmit={generate} className="glass space-y-4 rounded-2xl p-5">
+          <form onSubmit={generate} className="glass space-y-4 rounded-[28px] p-5">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={3}
               placeholder="Descreva a imagem em português… ex: um farol numa ilha durante uma tempestade, ao pôr do sol"
-              className="w-full resize-none rounded-xl border border-line bg-void/60 px-4 py-3 outline-none focus:border-neon/50"
+              className="w-full resize-none rounded-3xl border border-line bg-white/[0.06] px-4 py-3 outline-none focus:border-neon/50"
             />
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <Chips label="Formato" options={caps?.sizes ?? ['quadrado']} labels={SIZE_LABELS} value={size} onChange={setSize} />
@@ -109,12 +109,12 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <label className="flex cursor-pointer items-center gap-2 text-sm text-dim">
-                <input type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} className="accent-cyan-400" />
+                <input type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} className="accent-white" />
                 <Wand2 className="size-4" /> Ayran melhora o prompt (traduz pro inglês e detalha)
               </label>
               <button
                 disabled={sending || !prompt.trim() || !caps?.image}
-                className="ml-auto flex items-center gap-2 rounded-xl bg-neon px-5 py-2.5 font-semibold text-void transition hover:bg-neon-soft disabled:opacity-40"
+                className="ml-auto flex items-center gap-2 rounded-full bg-neon px-5 py-2.5 font-semibold text-void transition hover:bg-neon-soft disabled:opacity-40"
               >
                 {sending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                 Gerar imagem
@@ -188,7 +188,7 @@ function Chips({
           key={o}
           onClick={() => onChange(o)}
           className={`rounded-full px-3 py-1 text-xs transition ${
-            value === o ? 'bg-violet/80 text-white' : 'border border-line text-dim hover:text-ink'
+            value === o ? 'bg-white text-void' : 'border border-line text-dim hover:text-ink'
           }`}
         >
           {labels[o] ?? o}
@@ -223,7 +223,7 @@ function JobCard({ job, onOpen, onDelete }: { job: MediaJob; onOpen: () => void;
   const url = useMediaBlob(job)
   const aspect = job.params.size === 'retrato' ? 'aspect-[2/3]' : job.params.size === 'paisagem' ? 'aspect-[3/2]' : 'aspect-square'
   return (
-    <div className="glass group relative overflow-hidden rounded-2xl">
+    <div className="glass group relative overflow-hidden rounded-[28px]">
       <button onClick={onOpen} disabled={!url} className={`block w-full ${aspect} bg-panel`}>
         {url ? (
           <img src={url} alt={job.prompt} className="size-full object-cover transition group-hover:scale-[1.03]" />
@@ -257,14 +257,14 @@ function Viewer({ job, onClose }: { job: MediaJob; onClose: () => void }) {
   const url = useMediaBlob(job)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={onClose}>
-      <div className="glass max-h-full w-full max-w-3xl overflow-y-auto rounded-2xl p-4" onClick={(e) => e.stopPropagation()}>
+      <div className="glass max-h-full w-full max-w-3xl overflow-y-auto rounded-[28px] p-4" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center gap-2">
           <p className="flex-1 font-medium">{job.prompt}</p>
           {url && (
             <a
               href={url}
               download={`ayran-${job.id.slice(0, 8)}.png`}
-              className="flex items-center gap-1 rounded-lg bg-neon px-3 py-1.5 text-sm font-semibold text-void"
+              className="flex items-center gap-1 rounded-full bg-neon px-3 py-1.5 text-sm font-semibold text-void"
             >
               <Download className="size-4" /> Baixar
             </a>
@@ -287,8 +287,8 @@ function Viewer({ job, onClose }: { job: MediaJob; onClose: () => void }) {
 
 function VideoLocked({ caps }: { caps: MediaCapabilities | null }) {
   return (
-    <div className="glass flex flex-col items-center gap-4 rounded-2xl px-6 py-14 text-center">
-      <div className="rounded-2xl bg-violet/15 p-4 text-violet-300">
+    <div className="glass flex flex-col items-center gap-4 rounded-[28px] px-6 py-14 text-center">
+      <div className="rounded-2xl bg-white/10 p-4 text-ink">
         <Clapperboard className="size-8" />
       </div>
       <h3 className="text-xl font-semibold">Gerador de vídeo — pronto pra quando a placa chegar</h3>

@@ -15,9 +15,9 @@ export default function Music({ current, onChange }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <div className="glass rounded-2xl p-5">
+      <div className="glass rounded-[28px] p-5">
         <div className="mb-4 flex items-center gap-3">
-          <div className="rounded-xl bg-[#1db954]/15 p-2.5 text-[#1db954]">
+          <div className="rounded-full bg-[#1db954]/15 p-2.5 text-[#1db954]">
             <Music2 className="size-5" />
           </div>
           <div>
@@ -38,11 +38,11 @@ export default function Music({ current, onChange }: Props) {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://open.spotify.com/playlist/…"
-            className="flex-1 rounded-xl border border-line bg-void/60 px-3 py-2.5 outline-none focus:border-neon/50"
+            className="flex-1 rounded-full border border-line bg-white/[0.06] px-4 py-2.5 outline-none focus:border-neon/50"
           />
           <button
             disabled={!valid}
-            className="rounded-xl bg-[#1db954] px-5 py-2.5 font-semibold text-black transition hover:brightness-110 disabled:opacity-40"
+            className="rounded-full bg-[#1db954] px-5 py-2.5 font-semibold text-black transition hover:brightness-110 disabled:opacity-40"
           >
             Tocar no player
           </button>

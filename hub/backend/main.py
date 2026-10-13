@@ -28,6 +28,8 @@ from starlette.background import BackgroundTask
 
 from feeds import TOPICS
 from media import build_router as build_media_router, init_media_db
+from system import build_router as build_system_router
+from weather import build_router as build_weather_router
 
 OWUI_URL = os.environ.get("OWUI_URL", "http://127.0.0.1:8080")
 AYRAN_HOME = Path(os.environ.get("AYRAN_HOME", Path.home() / "ayran-server"))
@@ -172,6 +174,8 @@ async def owui_proxy(path: str, request: Request):
 
 media_router = build_media_router(db, current_user, AYRAN_HOME / "hub" / "media")
 app.include_router(media_router)
+app.include_router(build_weather_router(current_user))
+app.include_router(build_system_router(current_user))
 
 
 # ---------------- login automatico (so no proprio servidor) ----------------
@@ -322,25 +326,36 @@ async def delete_idea(idea_id: str, user=Depends(current_user)):
 DEFAULT_SETTINGS = {
     "spotify": "https://open.spotify.com/playlist/37i9dQZF1DWWQRwui0ExPn",  # lofi beats
     "topics": list(TOPICS),
+    "location": None,  # {"name": "São Paulo", "lat": -23.55, "lon": -46.63}; vazio = ainda nao escolhida
 }
+
+
+def _stored_settings(user_id: str) -> dict:
+    with db() as conn:
+        row = conn.execute("select data from settings where user_id = ?", (user_id,)).fetchone()
+    return json.loads(row["data"]) if row else {}
 
 
 @app.get("/api/settings")
 async def get_settings(user=Depends(current_user)):
-    with db() as conn:
-        row = conn.execute("select data from settings where user_id = ?", (user["id"],)).fetchone()
-    return {**DEFAULT_SETTINGS, **(json.loads(row["data"]) if row else {})}
+    return {**DEFAULT_SETTINGS, **_stored_settings(user["id"])}
 
 
 @app.put("/api/settings")
 async def put_settings(data: dict, user=Depends(current_user)):
-    allowed = {k: v for k, v in data.items() if k in DEFAULT_SETTINGS}
+    updates = {k: v for k, v in data.items() if k in DEFAULT_SETTINGS}
+    loc = updates.get("location")
+    if loc is not None and not (
+        isinstance(loc, dict) and isinstance(loc.get("lat"), (int, float)) and isinstance(loc.get("lon"), (int, float))
+    ):
+        raise HTTPException(400, "Localização inválida")
+    merged = {**_stored_settings(user["id"]), **updates}  # nao apaga o que nao foi enviado
     with db() as conn:
         conn.execute(
             "insert into settings values (?, ?) on conflict(user_id) do update set data = excluded.data",
-            (user["id"], json.dumps(allowed)),
+            (user["id"], json.dumps(merged)),
         )
-    return {**DEFAULT_SETTINGS, **allowed}
+    return {**DEFAULT_SETTINGS, **merged}
 
 
 # ---------------- frontend ----------------

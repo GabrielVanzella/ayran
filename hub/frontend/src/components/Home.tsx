@@ -1,10 +1,50 @@
-import { useEffect, useState } from 'react'
-import { ArrowRight, Code2, Lightbulb, Newspaper, Send, Zap } from 'lucide-react'
-import Orb from './Orb'
-import { getNews, listIdeas, timeAgo, type Idea, type NewsItem } from '../lib/api'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  ArrowRight,
+  Cpu,
+  Droplets,
+  HardDrive,
+  Lightbulb,
+  MapPin,
+  Newspaper,
+  Send,
+  Umbrella,
+  Wind,
+} from 'lucide-react'
+import Dial from './Dial'
+import LocationPicker from './LocationPicker'
+import {
+  getNews,
+  getSystem,
+  listChats,
+  listIdeas,
+  timeAgo,
+  type ChatSummary,
+  type DayForecast,
+  type Idea,
+  type Location,
+  type NewsItem,
+  type Scene,
+  type SystemInfo,
+  type Weather,
+} from '../lib/api'
+import { SCENES, sceneUrl, weatherIcon, weekday } from '../lib/weather'
 import type { Tab } from '../App'
 
-type Props = { userName: string; online: boolean; onAsk: (prompt: string) => void; onGo: (tab: Tab) => void }
+type Props = {
+  userName: string
+  online: boolean
+  scene: Scene
+  pinned: Scene | null
+  onPin: (s: Scene | null) => void
+  weather: Weather | null
+  weatherError: boolean
+  location: Location | null
+  onLocation: (l: Location) => void
+  onAsk: (prompt: string) => void
+  onGo: (tab: Tab) => void
+  onAuthError: () => void
+}
 
 function greeting(h: number) {
   if (h < 5) return 'Boa madrugada'
@@ -14,134 +54,385 @@ function greeting(h: number) {
 }
 
 const QUICK = [
-  { icon: Code2, label: 'Revisar código', prompt: 'Vou colar um código para você revisar. Aponte bugs, riscos e melhorias.' },
-  { icon: Zap, label: 'Planejar o dia', prompt: 'Me ajude a organizar minhas prioridades de hoje na empresa. Pergunte o que precisar.' },
-  { icon: Lightbulb, label: 'Brainstorm', prompt: 'Vamos fazer um brainstorm de ideias de produto para uma software house.' },
+  'Revise este código e aponte bugs',
+  'Me ajude a organizar as prioridades de hoje',
+  'Vamos fazer um brainstorm de ideias de produto',
 ]
 
-export default function Home({ userName, online, onAsk, onGo }: Props) {
+export default function Home(p: Props) {
   const [now, setNow] = useState(new Date())
+  const [ask, setAsk] = useState('')
+  const [editingCity, setEditingCity] = useState(false)
   const [news, setNews] = useState<NewsItem[]>([])
   const [ideas, setIdeas] = useState<Idea[]>([])
-  const [ask, setAsk] = useState('')
+  const [chats, setChats] = useState<ChatSummary[]>([])
+  const [system, setSystem] = useState<SystemInfo | null>(null)
 
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 30_000)
-    getNews().then((n) => setNews(n.slice(0, 6))).catch(() => {})
+    const t = setInterval(() => setNow(new Date()), 15_000)
+    getNews().then((n) => setNews(n.slice(0, 5))).catch(() => {})
     listIdeas().then((i) => setIdeas(i.filter((x) => x.status !== 'feita').slice(0, 4))).catch(() => {})
+    listChats().then(setChats).catch(() => {})
     return () => clearInterval(t)
   }, [])
 
+  useEffect(() => {
+    let alive = true
+    const load = () => getSystem().then((s) => alive && setSystem(s)).catch(() => {})
+    load()
+    const t = setInterval(load, 10_000)
+    return () => {
+      alive = false
+      clearInterval(t)
+    }
+  }, [])
+
+  const week = useMemo(() => weekActivity(chats), [chats])
+  const first = p.userName.split(' ')[0]
+
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
-      {/* hero */}
-      <section className="glass relative overflow-hidden rounded-3xl p-6 sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-neon/10 blur-3xl" />
-        <div className="flex flex-col gap-6 md:flex-row md:items-center">
-          <Orb size={88} />
-          <div className="flex-1">
-            <p className="text-sm uppercase tracking-[0.25em] text-dim">
-              {now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })} ·{' '}
+    <div className="mx-auto grid max-w-7xl gap-4 lg:grid-cols-12">
+      {/* ---------- hero: a cena em foco ---------- */}
+      <section
+        data-scene={p.scene}
+        className="relative order-1 min-h-[460px] overflow-hidden rounded-[28px] border border-white/15 lg:col-span-8 lg:row-span-1"
+        style={{ backgroundImage: 'var(--scene-fallback)' }}
+      >
+        <img
+          key={p.scene}
+          src={sceneUrl(p.scene)}
+          alt=""
+          className="absolute inset-0 size-full object-cover"
+          onError={(e) => (e.currentTarget.style.display = 'none')}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/5 to-black/65" />
+
+        <div className="relative flex h-full min-h-[460px] flex-col justify-between gap-6 p-5 sm:p-7">
+          {/* escolher a cena */}
+          <div className="scroll-thin -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Cena de fundo">
+            <ScenePill active={!p.pinned} onClick={() => p.onPin(null)}>
+              Automático
+            </ScenePill>
+            {SCENES.map((s) => (
+              <ScenePill key={s.id} active={p.pinned === s.id} onClick={() => p.onPin(s.id)}>
+                {s.label}
+              </ScenePill>
+            ))}
+          </div>
+
+          <div>
+            <p className="glow-text text-sm text-white/80">
+              {now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {p.weather && p.location ? ` · ${p.location.name} · ${Math.round(p.weather.current.temp)}° ${p.weather.current.label.toLowerCase()}` : ''}
+            </p>
+            <p className="glow-text mt-1 text-7xl font-light tabular-nums leading-none sm:text-8xl">
               {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </p>
-            <h1 className="mt-1 text-3xl font-bold sm:text-4xl">
-              {greeting(now.getHours())}, <span className="glow-text text-neon-soft">{userName.split(' ')[0]}</span>.
+            <h1 className="glow-text mt-3 text-2xl font-medium sm:text-3xl">
+              {greeting(now.getHours())}, {first}.
             </h1>
-            <p className="mt-1 flex items-center gap-2 text-dim">
-              <span className={`size-2 rounded-full ${online ? 'bg-emerald-400 shadow-[0_0_10px] shadow-emerald-400' : 'bg-red-400'}`} />
-              {online ? 'Ayran online e pronto.' : 'Ayran offline — verifique o servidor.'}
+            <p className="mt-1 flex items-center gap-2 text-sm text-white/75">
+              <span className={`size-2 rounded-full ${p.online ? 'bg-emerald-400' : 'bg-red-400'}`} />
+              {p.online ? 'Ayran online e pronto.' : 'Ayran offline. Verifique o servidor.'}
             </p>
-          </div>
-        </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (ask.trim()) onAsk(ask.trim())
-          }}
-          className="mt-6 flex items-center gap-2 rounded-2xl border border-line bg-void/60 p-2 focus-within:border-neon/50"
-        >
-          <input
-            value={ask}
-            onChange={(e) => setAsk(e.target.value)}
-            placeholder="Pergunte qualquer coisa ao Ayran…"
-            className="flex-1 bg-transparent px-3 py-2 outline-none placeholder:text-dim/70"
-          />
-          <button className="rounded-xl bg-neon p-2.5 text-void hover:bg-neon-soft" aria-label="Perguntar">
-            <Send className="size-4" />
-          </button>
-        </form>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {QUICK.map(({ icon: Icon, label, prompt }) => (
-            <button
-              key={label}
-              onClick={() => onAsk(prompt)}
-              className="flex items-center gap-2 rounded-full border border-line px-3 py-1.5 text-sm text-dim transition hover:border-neon/40 hover:text-ink"
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (ask.trim()) p.onAsk(ask.trim())
+              }}
+              className="mt-5 flex items-center gap-2 rounded-full border border-white/20 bg-black/35 p-1.5 backdrop-blur-xl focus-within:border-white/50"
             >
-              <Icon className="size-3.5" /> {label}
-            </button>
-          ))}
+              <input
+                value={ask}
+                onChange={(e) => setAsk(e.target.value)}
+                placeholder="Pergunte ao Ayran…"
+                aria-label="Pergunte ao Ayran"
+                className="min-w-0 flex-1 bg-transparent px-4 py-2 outline-none placeholder:text-white/55"
+              />
+              <button className="grid size-10 place-items-center rounded-full bg-white text-void transition hover:bg-white/90" aria-label="Enviar">
+                <Send className="size-4" />
+              </button>
+            </form>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {QUICK.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => p.onAsk(q)}
+                  className="rounded-full border border-white/20 bg-black/25 px-3.5 py-1.5 text-xs text-white/85 backdrop-blur transition hover:bg-black/45"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-[3fr_2fr]">
-        <Card title="Notícias" icon={Newspaper} onMore={() => onGo('news')}>
-          {news.length === 0 && <p className="text-sm text-dim">Carregando manchetes…</p>}
-          <ul className="divide-y divide-line">
-            {news.map((n) => (
-              <li key={n.link + n.title}>
-                <a href={n.link} target="_blank" rel="noreferrer" className="group block py-2.5">
-                  <p className="text-sm leading-snug group-hover:text-neon-soft">{n.title}</p>
-                  <p className="mt-0.5 text-xs text-dim">
-                    {n.source} · {timeAgo(n.published)}
-                  </p>
-                </a>
+      {/* ---------- clima + previsao ---------- */}
+      <section className="glass order-2 rounded-[28px] p-5 lg:col-span-4 lg:row-span-2">
+        {!p.location || editingCity ? (
+          <div>
+            <h2 className="mb-1 text-lg font-medium">{p.location ? 'Trocar cidade' : 'Onde você está?'}</h2>
+            <p className="mb-4 text-sm text-dim">O Ayran usa a cidade para mostrar o clima e trocar o cenário do painel.</p>
+            <LocationPicker
+              onAuthError={p.onAuthError}
+              onClose={p.location ? () => setEditingCity(false) : undefined}
+              onPick={(l) => {
+                p.onLocation(l)
+                setEditingCity(false)
+              }}
+            />
+          </div>
+        ) : p.weather ? (
+          <Forecast weather={p.weather} city={p.location.name} onChangeCity={() => setEditingCity(true)} />
+        ) : (
+          <div className="grid h-full min-h-48 place-items-center text-center text-sm text-dim">
+            {p.weatherError ? 'Não consegui consultar o clima agora.' : 'Carregando o clima…'}
+          </div>
+        )}
+      </section>
+
+      {/* ---------- servidor + servicos + atividade ---------- */}
+      <div className="order-3 grid gap-4 md:grid-cols-2 lg:col-span-8">
+        <section className="glass rounded-[28px] p-5 md:col-span-1">
+          <header className="mb-2 flex items-center justify-between">
+            <h2 className="font-medium">Servidor</h2>
+            <span className="max-w-[60%] truncate text-xs text-dim">{system?.model ? `modelo: ${system.model}` : 'sem modelo carregado'}</span>
+          </header>
+          <div className="flex flex-col items-center gap-3">
+            {system ? (
+              <>
+                <Dial
+                  value={system.gpu ? (system.gpu.used_mb / system.gpu.total_mb) * 100 : system.ram.percent}
+                  label={system.gpu ? 'VRAM da GPU' : 'Memória RAM'}
+                  caption={system.gpu ? `${(system.gpu.used_mb / 1024).toFixed(1)} de ${(system.gpu.total_mb / 1024).toFixed(0)} GB` : `${system.ram.used_gb} de ${system.ram.total_gb} GB`}
+                />
+                <div className="grid w-full grid-cols-3 gap-2 text-center text-xs">
+                  <Metric icon={Cpu} label="CPU" value={`${Math.round(system.cpu)}%`} />
+                  <Metric icon={HardDrive} label="Disco livre" value={`${system.disk.free_gb} GB`} />
+                  <Metric icon={Cpu} label="RAM" value={`${Math.round(system.ram.percent)}%`} />
+                </div>
+              </>
+            ) : (
+              <div className="grid h-56 place-items-center text-sm text-dim">Lendo o servidor…</div>
+            )}
+          </div>
+        </section>
+
+        <div className="grid gap-4">
+          <section className="glass rounded-[28px] p-5">
+            <h2 className="mb-3 font-medium">Serviços</h2>
+            <ul className="grid grid-cols-2 gap-2">
+              {(system?.services ?? []).map((s) => (
+                <li key={s.id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={`size-2 shrink-0 rounded-full ${s.up ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                    <span className="truncate">{s.label}</span>
+                  </div>
+                  <p className="mt-1 truncate text-xs text-dim">{s.up ? s.hint : 'fora do ar'}</p>
+                </li>
+              ))}
+              {!system && <li className="col-span-2 py-6 text-center text-sm text-dim">Verificando…</li>}
+            </ul>
+          </section>
+
+          <section className="glass rounded-[28px] p-5">
+            <header className="mb-3 flex items-baseline justify-between">
+              <h2 className="font-medium">Conversas</h2>
+              <span className="text-xs text-dim">últimos 7 dias</span>
+            </header>
+            <ActivityChart week={week} />
+          </section>
+        </div>
+      </div>
+
+      {/* ---------- noticias + ideias ---------- */}
+      <section className="glass order-4 rounded-[28px] p-5 lg:col-span-8">
+        <Header icon={Newspaper} title="Notícias" onMore={() => p.onGo('news')} />
+        {news.length === 0 && <p className="text-sm text-dim">Carregando manchetes…</p>}
+        <ul className="divide-y divide-white/10">
+          {news.map((n) => (
+            <li key={n.link + n.title}>
+              <a href={n.link} target="_blank" rel="noreferrer" className="group block py-2.5">
+                <p className="text-sm leading-snug transition group-hover:text-white">{n.title}</p>
+                <p className="mt-0.5 text-xs text-dim">
+                  {n.source} · {timeAgo(n.published)}
+                </p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="glass order-5 rounded-[28px] p-5 lg:col-span-4">
+        <Header icon={Lightbulb} title="Ideias em aberto" onMore={() => p.onGo('ideas')} />
+        {ideas.length === 0 ? (
+          <button onClick={() => p.onGo('ideas')} className="text-sm text-dim transition hover:text-ink">
+            Nenhuma ideia ainda. Anote a primeira →
+          </button>
+        ) : (
+          <ul className="space-y-2">
+            {ideas.map((i) => (
+              <li key={i.id} className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                <p className="text-sm font-medium">{i.title}</p>
+                <p className="text-xs text-dim">{i.status === 'nova' ? 'nova' : 'em andamento'}</p>
               </li>
             ))}
           </ul>
-        </Card>
-
-        <Card title="Ideias em aberto" icon={Lightbulb} onMore={() => onGo('ideas')}>
-          {ideas.length === 0 ? (
-            <button onClick={() => onGo('ideas')} className="text-sm text-dim hover:text-ink">
-              Nenhuma ideia ainda — anote a primeira →
-            </button>
-          ) : (
-            <ul className="space-y-2">
-              {ideas.map((i) => (
-                <li key={i.id} className="rounded-xl border border-line bg-panel/60 px-3 py-2">
-                  <p className="text-sm font-medium">{i.title}</p>
-                  <p className="text-xs text-dim">{i.status === 'nova' ? 'nova' : 'em andamento'}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
+        )}
+      </section>
     </div>
   )
 }
 
-function Card({
-  title,
-  icon: Icon,
-  onMore,
-  children,
-}: {
-  title: string
-  icon: typeof Newspaper
-  onMore: () => void
-  children: React.ReactNode
-}) {
+function ScenePill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <section className="glass rounded-2xl p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Icon className="size-4 text-neon" />
-        <h2 className="font-semibold">{title}</h2>
-        <button onClick={onMore} className="ml-auto flex items-center gap-1 text-xs text-dim hover:text-neon-soft">
-          ver tudo <ArrowRight className="size-3" />
-        </button>
-      </div>
+    <button
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs transition ${
+        active ? 'bg-white text-void' : 'border border-white/20 bg-black/30 text-white/85 backdrop-blur hover:bg-black/50'
+      }`}
+    >
       {children}
-    </section>
+    </button>
+  )
+}
+
+function Header({ icon: Icon, title, onMore }: { icon: typeof Newspaper; title: string; onMore: () => void }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <Icon className="size-4 text-dim" />
+      <h2 className="font-medium">{title}</h2>
+      <button onClick={onMore} className="ml-auto flex items-center gap-1 text-xs text-dim transition hover:text-ink">
+        ver tudo <ArrowRight className="size-3" />
+      </button>
+    </div>
+  )
+}
+
+function Metric({ icon: Icon, label, value }: { icon: typeof Cpu; label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-2">
+      <Icon className="mx-auto mb-1 size-4 text-dim" />
+      <p className="tabular-nums">{value}</p>
+      <p className="text-[11px] text-dim">{label}</p>
+    </div>
+  )
+}
+
+function Forecast({ weather, city, onChangeCity }: { weather: Weather; city: string; onChangeCity: () => void }) {
+  const c = weather.current
+  const Icon = weatherIcon(c.code, c.is_day)
+  const lo = Math.min(...weather.daily.map((d) => d.min))
+  const hi = Math.max(...weather.daily.map((d) => d.max))
+  const today = weather.daily[0]
+
+  return (
+    <div>
+      <button onClick={onChangeCity} className="mb-4 flex items-center gap-1.5 text-sm text-dim transition hover:text-ink" aria-label="Trocar cidade">
+        <MapPin className="size-4" /> {city}
+      </button>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-6xl font-light tabular-nums leading-none">
+            {Math.round(c.temp)}
+            <span className="align-top text-2xl text-dim">°C</span>
+          </p>
+          <p className="mt-2 text-sm">{c.label}</p>
+          <p className="text-xs text-dim">Sensação de {Math.round(c.feels)}°</p>
+        </div>
+        <Icon className="size-14 text-white/90" strokeWidth={1.2} />
+      </div>
+
+      <dl className="mt-5 grid grid-cols-3 gap-2 text-center text-xs">
+        <Stat icon={Droplets} label="Umidade" value={`${c.humidity}%`} />
+        <Stat icon={Wind} label="Vento" value={`${Math.round(c.wind)} km/h`} />
+        <Stat icon={Umbrella} label="Chuva hoje" value={today?.rain != null ? `${today.rain}%` : '–'} />
+      </dl>
+
+      <h3 className="mb-2 mt-6 text-xs uppercase tracking-wider text-dim">Próximos dias</h3>
+      <ul className="space-y-1">
+        {weather.daily.map((d, i) => (
+          <DayRow key={d.date} day={d} first={i === 0} lo={lo} hi={hi} />
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function Stat({ icon: Icon, label, value }: { icon: typeof Wind; label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-2.5">
+      <Icon className="mx-auto mb-1 size-4 text-dim" />
+      <dd className="tabular-nums">{value}</dd>
+      <dt className="text-[11px] text-dim">{label}</dt>
+    </div>
+  )
+}
+
+function DayRow({ day, first, lo, hi }: { day: DayForecast; first: boolean; lo: number; hi: number }) {
+  const Icon = weatherIcon(day.code)
+  const span = Math.max(1, hi - lo)
+  const left = ((day.min - lo) / span) * 100
+  const width = Math.max(8, ((day.max - day.min) / span) * 100)
+  return (
+    <li className="grid grid-cols-[3rem_1.5rem_2rem_1fr_2rem] items-center gap-2 rounded-xl px-1.5 py-1.5 text-sm" title={day.label}>
+      <span className="capitalize">{first ? 'Hoje' : weekday(day.date)}</span>
+      <Icon className="size-4 text-white/85" />
+      <span className="text-right tabular-nums text-dim">{Math.round(day.min)}°</span>
+      <span className="relative h-1.5 rounded-full bg-white/12">
+        <span className="absolute inset-y-0 rounded-full bg-white/80" style={{ left: `${left}%`, width: `${width}%` }} />
+      </span>
+      <span className="tabular-nums">{Math.round(day.max)}°</span>
+    </li>
+  )
+}
+
+type Day = { label: string; count: number; today: boolean }
+
+/** Conversas por dia nos ultimos 7 dias, a partir do historico real. */
+function weekActivity(chats: ChatSummary[]): Day[] {
+  const days: Day[] = []
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(start)
+    d.setDate(d.getDate() - i)
+    const next = new Date(d)
+    next.setDate(next.getDate() + 1)
+    const count = chats.filter((c) => c.updated_at * 1000 >= d.getTime() && c.updated_at * 1000 < next.getTime()).length
+    days.push({ label: d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''), count, today: i === 0 })
+  }
+  return days
+}
+
+function ActivityChart({ week }: { week: Day[] }) {
+  const max = Math.max(1, ...week.map((d) => d.count))
+  const total = week.reduce((a, d) => a + d.count, 0)
+  return (
+    <div>
+      <div className="flex h-24 items-end gap-2" role="img" aria-label={`${total} conversas nos últimos 7 dias`}>
+        {week.map((d, i) => (
+          <div key={i} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+            <span className="text-[10px] tabular-nums text-dim">{d.count || ''}</span>
+            <span
+              className={`w-full rounded-full ${d.today ? 'bg-white' : 'bg-white/30'}`}
+              style={{ height: `${Math.max(6, (d.count / max) * 100)}%`, minHeight: 6 }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2">
+        {week.map((d, i) => (
+          <span key={i} className={`flex-1 text-center text-[11px] capitalize ${d.today ? 'text-ink' : 'text-dim'}`}>
+            {d.label}
+          </span>
+        ))}
+      </div>
+      {total === 0 && <p className="mt-3 text-center text-xs text-dim">Suas conversas com o Ayran aparecem aqui.</p>}
+    </div>
   )
 }

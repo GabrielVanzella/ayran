@@ -23,8 +23,8 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
   }
 
   return (
-    <div className="bg-grid flex min-h-full items-center justify-center px-4 py-10">
-      <form onSubmit={submit} className="glass w-full max-w-sm rounded-3xl p-8">
+    <div className="flex min-h-full items-center justify-center px-4 py-10">
+      <form onSubmit={submit} className="glass w-full max-w-sm rounded-[28px] p-8">
         <div className="mb-8 flex flex-col items-center gap-4 text-center">
           <Orb size={72} />
           <div>
@@ -39,7 +39,7 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mb-4 w-full rounded-xl border border-line bg-void/60 px-4 py-3 outline-none focus:border-neon/60"
+          className="mb-4 w-full rounded-full border border-line bg-white/[0.06] px-5 py-3 outline-none focus:border-neon/60"
         />
         <label className="mb-1 block text-xs uppercase tracking-wider text-dim">Senha</label>
         <input
@@ -48,12 +48,12 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mb-6 w-full rounded-xl border border-line bg-void/60 px-4 py-3 outline-none focus:border-neon/60"
+          className="mb-6 w-full rounded-full border border-line bg-white/[0.06] px-5 py-3 outline-none focus:border-neon/60"
         />
         {error && <p className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>}
         <button
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-neon px-4 py-3 font-semibold text-void transition hover:bg-neon-soft disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-neon px-4 py-3 font-semibold text-void transition hover:bg-neon-soft disabled:opacity-60"
         >
           {loading && <Loader2 className="size-4 animate-spin" />}
           Entrar

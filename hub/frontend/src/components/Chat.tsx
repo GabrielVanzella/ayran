@@ -138,7 +138,7 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
     <div className="flex h-full flex-col">
       <button
         onClick={newChat}
-        className="mb-3 flex items-center justify-center gap-2 rounded-xl border border-neon/30 bg-neon/10 px-3 py-2.5 text-sm font-medium text-neon-soft transition hover:bg-neon/20"
+        className="mb-3 flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2.5 text-sm font-medium text-neon-soft transition hover:bg-neon/20"
       >
         <Plus className="size-4" /> Nova conversa
       </button>
@@ -169,7 +169,7 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
 
   return (
     <div className="flex h-full gap-4">
-      <aside className="glass hidden w-64 shrink-0 rounded-2xl p-3 lg:block">{historyPanel}</aside>
+      <aside className="glass hidden w-64 shrink-0 rounded-[28px] p-3 lg:block">{historyPanel}</aside>
 
       {showHistory && (
         <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setShowHistory(false)}>
@@ -182,7 +182,7 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
         </div>
       )}
 
-      <section className="glass flex min-w-0 flex-1 flex-col rounded-2xl">
+      <section className="glass flex min-w-0 flex-1 flex-col rounded-[28px]">
         <header className="flex items-center gap-3 border-b border-line px-4 py-3">
           <button onClick={() => setShowHistory(true)} className="text-dim lg:hidden" aria-label="Histórico">
             <History className="size-5" />
@@ -210,7 +210,7 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="rounded-xl border border-line bg-panel/60 px-4 py-3 text-left text-sm text-dim transition hover:border-neon/40 hover:text-ink"
+                    className="rounded-2xl border border-line bg-white/[0.05] px-4 py-3 text-left text-sm text-dim transition hover:border-neon/40 hover:text-ink"
                   >
                     {s}
                   </button>
@@ -235,7 +235,7 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
           }}
           className="border-t border-line p-3 sm:p-4"
         >
-          <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-line bg-void/60 p-2 focus-within:border-neon/50">
+          <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-line bg-white/[0.06] p-2 focus-within:border-neon/50">
             <textarea
               ref={inputRef}
               value={input}
@@ -255,7 +255,7 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
               <button
                 type="button"
                 onClick={() => abortRef.current?.abort()}
-                className="rounded-xl bg-white/10 p-2.5 text-ink hover:bg-white/20"
+                className="rounded-full bg-white/10 p-2.5 text-ink hover:bg-white/20"
                 aria-label="Parar"
               >
                 <Square className="size-4" />
@@ -263,7 +263,7 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
             ) : (
               <button
                 disabled={!input.trim()}
-                className="rounded-xl bg-neon p-2.5 text-void transition hover:bg-neon-soft disabled:opacity-30"
+                className="rounded-full bg-neon p-2.5 text-void transition hover:bg-neon-soft disabled:opacity-30"
                 aria-label="Enviar"
               >
                 <Send className="size-4" />
@@ -292,8 +292,8 @@ function Message({ msg, live }: { msg: ChatMsg; live: boolean }) {
       <Orb size={28} thinking={live} />
       <div className="min-w-0 flex-1">
         {thinking && (
-          <details open={thinkingOpen} className="mb-2 rounded-xl border border-violet/30 bg-violet/5 px-3 py-2 text-sm">
-            <summary className="flex cursor-pointer items-center gap-2 text-violet-300">
+          <details open={thinkingOpen} className="mb-2 rounded-2xl border border-white/15 bg-white/5 px-3 py-2 text-sm">
+            <summary className="flex cursor-pointer items-center gap-2 text-dim">
               <Brain className="size-4" /> {thinkingOpen ? 'Raciocinando…' : 'Raciocínio'}
             </summary>
             <div className="mt-2 whitespace-pre-wrap text-dim">{thinking}</div>

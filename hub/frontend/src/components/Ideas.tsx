@@ -58,26 +58,26 @@ export default function Ideas({ onAuthError, onDevelop }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <form onSubmit={add} className="glass grid gap-2 rounded-2xl p-4 sm:grid-cols-[1fr_2fr_10rem_auto]">
+      <form onSubmit={add} className="glass grid gap-2 rounded-[28px] p-4 sm:grid-cols-[1fr_2fr_10rem_auto]">
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Nova ideia…"
-          className="rounded-xl border border-line bg-void/60 px-3 py-2.5 outline-none focus:border-neon/50"
+          className="rounded-full border border-line bg-white/[0.06] px-4 py-2.5 outline-none focus:border-neon/50"
         />
         <input
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Detalhes (opcional)"
-          className="rounded-xl border border-line bg-void/60 px-3 py-2.5 outline-none focus:border-neon/50"
+          className="rounded-full border border-line bg-white/[0.06] px-4 py-2.5 outline-none focus:border-neon/50"
         />
         <input
           value={tag}
           onChange={(e) => setTag(e.target.value)}
           placeholder="Tag (ex: produto)"
-          className="rounded-xl border border-line bg-void/60 px-3 py-2.5 outline-none focus:border-neon/50"
+          className="rounded-full border border-line bg-white/[0.06] px-4 py-2.5 outline-none focus:border-neon/50"
         />
-        <button className="flex items-center justify-center gap-2 rounded-xl bg-neon px-4 py-2.5 font-semibold text-void hover:bg-neon-soft">
+        <button className="flex items-center justify-center gap-2 rounded-full bg-neon px-4 py-2.5 font-semibold text-void hover:bg-neon-soft">
           <Plus className="size-4" /> Adicionar
         </button>
       </form>
@@ -86,7 +86,7 @@ export default function Ideas({ onAuthError, onDevelop }: Props) {
         {COLUMNS.map((col, ci) => {
           const list = ideas.filter((i) => i.status === col.id)
           return (
-            <div key={col.id} className="glass rounded-2xl p-3">
+            <div key={col.id} className="glass rounded-[28px] p-3">
               <div className="mb-3 flex items-center gap-2 px-1">
                 <span className={`size-2 rounded-full ${col.accent}`} />
                 <h3 className="font-semibold">{col.label}</h3>
@@ -108,7 +108,7 @@ export default function Ideas({ onAuthError, onDevelop }: Props) {
                     <div className="mt-3 flex items-center gap-1">
                       <button
                         onClick={() => develop(idea)}
-                        className="flex items-center gap-1 rounded-lg bg-violet/20 px-2 py-1 text-xs text-violet-200 hover:bg-violet/35"
+                        className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs text-ink hover:bg-white/20"
                       >
                         <Sparkles className="size-3.5" /> Desenvolver com Ayran
                       </button>

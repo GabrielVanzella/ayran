@@ -79,7 +79,7 @@ export default function News({ onAuthError }: { onAuthError: () => void }) {
           <button
             onClick={summarize}
             disabled={summarizing || !items.length}
-            className="flex items-center gap-2 rounded-full bg-violet/80 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-violet disabled:opacity-50"
+            className="flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-medium text-void transition hover:bg-white/90 disabled:opacity-50"
           >
             {summarizing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
             Briefing do Ayran
@@ -88,7 +88,7 @@ export default function News({ onAuthError }: { onAuthError: () => void }) {
       </div>
 
       {(summary || summarizing) && (
-        <div className="glass flex gap-3 rounded-2xl p-5">
+        <div className="glass flex gap-3 rounded-[28px] p-5">
           <Orb size={30} thinking={summarizing} />
           <div className="min-w-0 flex-1">
             <Markdown text={summary.replace(/<think>[\s\S]*?(<\/think>|$)/, '').trim() || '…'} />
@@ -108,7 +108,7 @@ export default function News({ onAuthError }: { onAuthError: () => void }) {
               href={n.link}
               target="_blank"
               rel="noreferrer"
-              className="glass group flex flex-col justify-between gap-3 rounded-2xl p-4 transition hover:border-neon/40"
+              className="glass group flex flex-col justify-between gap-3 rounded-[28px] p-4 transition hover:border-neon/40"
             >
               <p className="font-medium leading-snug group-hover:text-neon-soft">{n.title}</p>
               <div className="flex items-center gap-2 text-xs text-dim">

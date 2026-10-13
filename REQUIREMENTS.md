@@ -124,6 +124,32 @@ Uma central própria da minha IA, **acessível de qualquer lugar** (web/PWA no c
 - Implementação v0.1: `hub/` (backend FastAPI + frontend React/Vite/Tailwind), porta 3000, `server/start-hub.ps1`
 - [ ] Mostrar na central qual especialista respondeu (hoje só aparece no Open WebUI)
 - [ ] Voz na central (falar/ouvir)
+- [x] Publicada em **vztecnologia.com.br/ayran** (Cloudflare: DNS + Worker `ayran-proxy` + Tunnel `ayran`; ver `server/cloudflare/`, `server/start-tunnel.ps1`)
+
+#### Escopo de uso (definido em 2026-10-13)
+O Ayran ajuda o Gabriel na **vida pessoal e no trabalho**, e vai **cuidar da VZ Tecnologia e dos projetos**. Usuários no momento: **Gabriel + funcionários**. Regra de ouro: **vida pessoal nunca fica visível pra equipe**.
+- Três espaços de dados separados:
+  1. **Pessoal** (só o dono): notas, ideias pessoais, memória de longo prazo, conversas — nunca entra no conhecimento compartilhado
+  2. **Empresa** (equipe): documentação, padrões da VZ, `CLAUDE.md`/docs dos projetos (RAG compartilhado), ideias da empresa
+  3. **Por projeto/cliente**: cada funcionário só consulta os projetos em que trabalha
+- Papéis: **admin** (Gabriel) vê tudo e usa modos exclusivos (`/dolphin`); **funcionário** usa chat, código, imagem e a base da empresa, sem acesso ao pessoal do dono
+- **Funcionários têm acesso a tudo que o Gabriel tem, exceto algumas coisas** (as exceções serão informadas por ele durante o desenvolvimento). Por isso as permissões devem ser **configuráveis por recurso e por papel** num lugar só (uma tabela de recursos × papéis), pra liberar/bloquear sem mexer em código
+- [ ] Tabela de permissões por recurso (chat, código, imagem, vídeo, modo criativo, base da empresa, API/gateway, painel avançado…) × papel; começa tudo liberado, exceto o espaço pessoal do dono
+- Já é por usuário hoje: conversas (Open WebUI), ideias, preferências (cidade, playlist, cena), galeria de imagens
+- [ ] Base de conhecimento da empresa (RAG) separada da pessoal, com permissão por grupo/projeto
+- [ ] Decidir e avisar a equipe: o admin do Open WebUI pode ler as conversas dos usuários (`ENABLE_ADMIN_CHAT_ACCESS`); desligar se a política for privacidade total
+- [ ] Memória de longo prazo por usuário (Fase 7) — a do Gabriel isolada da dos funcionários
+- [ ] Ayran "toma conta" da VZ: acompanhar projetos (git log, ideias, prazos), resumo diário pro dono (ver "Resumo do dia")
+
+#### Visual v2 — "experiência personalizada" (pedido em 2026-10-13)
+Referências: dashboard de casa inteligente em vidro fosco (Smartiva) + paisagem em hero com painéis translúcidos por cima. **Design Read**: painel de comando de IA pessoal, para dono/equipe de software house, linguagem de vidro fosco sobre cena desfocada (pedido explícito, apesar do skill desaconselhar glassmorphism como padrão).
+- [x] Sistema visual: uma paleta (cinza-azulado + gelo), raio único (cartões 28px, controles em pílula), ícones de traço fino, fonte Outfit, painel flutuante com navegação em cápsula e barra de topo com busca
+- [x] **Tema que muda com o clima**: Open-Meteo (grátis, sem chave) → cena de fundo: praia (≥ 28 °C), pôr do sol, nublado, chuva, tempestade, neblina, noite, frio. Cenas geradas pelo próprio gerador de imagens (`server/generate-scenes.py`)
+- [x] Cidade por busca ou "usar minha localização", salva por usuário; o usuário pode fixar uma cena (ou deixar "Automático")
+- [x] Tela inicial: relógio, clima agora, previsão de 7 dias, medidor circular do servidor (VRAM/RAM), serviços, conversas por dia (dados reais), notícias e ideias
+- [ ] Cenas em resolução maior (SDXL no PC novo, 1920×1080) — no notebook são 768×512 desfocadas
+- [ ] Resumo do dia feito pelo Ayran (clima + ideias + notícias)
+- [ ] Aplicar o mesmo acabamento às telas Chat, Criar, Notícias, Ideias e Música (hoje só herdam o material e a paleta)
 
 ### Fase 1.6 — Ayran como produto: API de IA para clientes da software house (pedido em 2026-10-09)
 Contexto: clientes da software house querem IA nos sistemas deles. Hoje a gente compra crédito de API de terceiros e integra. Ideia: **o Ayran fornece a chave de API** e o cliente **recarrega crédito com a gente**.

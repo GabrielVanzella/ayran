@@ -33,3 +33,8 @@ outputs/
 # Build do frontend da central
 hub/frontend/dist/
 *.tsbuildinfo
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
+
+# Sessoes/prints do Playwright CLI
+.playwright-cli/
