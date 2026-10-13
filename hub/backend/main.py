@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
 from feeds import TOPICS
+from cityscenes import build_router as build_city_router
 from media import build_router as build_media_router, init_media_db
 from system import build_router as build_system_router
 from team import build_router as build_team_router
@@ -71,8 +72,10 @@ async def lifespan(app: FastAPI):
     init_db()
     app.state.http = httpx.AsyncClient(timeout=httpx.Timeout(10, read=None), follow_redirects=False)
     media_worker = asyncio.create_task(media_router.worker())
+    city_worker = asyncio.create_task(city_router.worker())
     yield
     media_worker.cancel()
+    city_worker.cancel()
     await app.state.http.aclose()
 
 
@@ -175,6 +178,8 @@ async def owui_proxy(path: str, request: Request):
 
 media_router = build_media_router(db, current_user, AYRAN_HOME / "hub" / "media")
 app.include_router(media_router)
+city_router = build_city_router(current_user, lambda uid: _stored_settings(uid).get("location"), AYRAN_HOME / "hub")
+app.include_router(city_router)
 app.include_router(build_weather_router(current_user))
 app.include_router(build_system_router(current_user))
 def forget_user(user_id: str):

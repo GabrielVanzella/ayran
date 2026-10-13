@@ -31,8 +31,15 @@ WMO = {
 }
 
 
-def scene_for(code: int, temp: float, is_day: bool) -> str:
-    """Escolhe a cena de fundo. Chuva/tempestade/neblina ganham do resto; senao, dia ou noite + temperatura."""
+GOLDEN_MIN = 50  # minutos antes/depois do nascer e do por do sol em que a luz e dourada
+
+
+def scene_for(code: int, temp: float, feels: float, is_day: bool, golden: bool = False) -> str:
+    """Escolhe a cena de fundo.
+
+    Chuva/tempestade/neblina ganham do resto. Senao: noite; luz dourada (perto do nascer/por do sol);
+    nublado; frio; calor (sensacao termica) e dia claro.
+    """
     group = WMO.get(code, ("", "nublado"))[1]
     if group in ("tempestade", "chuva", "neblina"):
         return group
@@ -42,7 +49,17 @@ def scene_for(code: int, temp: float, is_day: bool) -> str:
         return "frio"
     if group == "nublado":
         return "nublado"
-    return "praia" if temp >= HOT_C else "sol"
+    if golden:
+        return "sol"
+    return "praia" if feels >= HOT_C else "dia"
+
+
+def is_golden_hour(now_iso: str, sunrise_iso: str, sunset_iso: str) -> bool:
+    """Horarios locais (ISO, sem fuso) da propria API: compara em minutos."""
+    from datetime import datetime
+
+    now = datetime.fromisoformat(now_iso)
+    return any(abs((now - datetime.fromisoformat(t)).total_seconds()) <= GOLDEN_MIN * 60 for t in (sunrise_iso, sunset_iso))
 
 
 def describe(code: int) -> str:
@@ -66,7 +83,7 @@ def build_router(current_user) -> APIRouter:
             r = await client.get(FORECAST_URL, timeout=15, params={
                 "latitude": lat, "longitude": lon, "timezone": "auto", "forecast_days": 7,
                 "current": "temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m",
-                "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+                "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset",
             })
             r.raise_for_status()
             raw = r.json()
@@ -84,7 +101,11 @@ def build_router(current_user) -> APIRouter:
                 "is_day": bool(cur["is_day"]), "code": cur["weather_code"],
                 "label": describe(cur["weather_code"]),
             },
-            "scene": scene_for(cur["weather_code"], cur["temperature_2m"], bool(cur["is_day"])),
+            "scene": scene_for(
+                cur["weather_code"], cur["temperature_2m"], cur["apparent_temperature"], bool(cur["is_day"]),
+                is_golden_hour(cur["time"], daily["sunrise"][0], daily["sunset"][0]),
+            ),
+            "sunrise": daily["sunrise"][0], "sunset": daily["sunset"][0], "time": cur["time"],
             "daily": [
                 {
                     "date": daily["time"][i], "code": daily["weather_code"][i], "label": describe(daily["weather_code"][i]),
@@ -95,6 +116,35 @@ def build_router(current_user) -> APIRouter:
             ],
         }
         cache[key] = (time.time(), out)
+        return out
+
+    reverse_cache: dict[tuple, dict] = {}
+
+    @router.get("/reverse")
+    async def reverse(request: Request, lat: float, lon: float, user=Depends(current_user)):
+        """Coordenadas -> cidade (OpenStreetMap/Nominatim). So e chamado quando o usuario usa a localizacao."""
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            raise HTTPException(400, "Coordenadas inválidas")
+        key = (round(lat, 2), round(lon, 2))
+        if key in reverse_cache:
+            return reverse_cache[key]
+        client: httpx.AsyncClient = request.app.state.http
+        try:
+            r = await client.get(
+                "https://nominatim.openstreetmap.org/reverse", timeout=10,
+                params={"format": "jsonv2", "lat": lat, "lon": lon, "zoom": 10, "accept-language": "pt-BR"},
+                headers={"User-Agent": "AyranCentral/1.0 (vztecnologia.com.br)"},  # exigido pela politica do Nominatim
+            )
+            r.raise_for_status()
+            data = r.json()
+        except Exception:
+            raise HTTPException(502, "Não consegui descobrir o nome da cidade agora")
+        addr = data.get("address", {})
+        name = addr.get("city") or addr.get("town") or addr.get("village") or addr.get("municipality") or data.get("name")
+        if not name:
+            raise HTTPException(404, "Cidade não encontrada")
+        out = {"name": name, "region": addr.get("state", ""), "country": addr.get("country", "")}
+        reverse_cache[key] = out
         return out
 
     @router.get("/geocode")

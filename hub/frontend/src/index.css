@@ -68,6 +68,7 @@ svg.lucide {
 
 /* Gradientes de reserva enquanto a imagem carrega (ou se ela faltar) */
 [data-scene='praia'] { --scene-fallback: linear-gradient(160deg, #0b4f6c, #1c8fa8 55%, #e8c27a); }
+[data-scene='dia'] { --scene-fallback: linear-gradient(160deg, #0f4c81, #4f9fd8 60%, #cfe8c5); }
 [data-scene='sol'] { --scene-fallback: linear-gradient(160deg, #2b1b3d, #b4492b 60%, #f0a24b); }
 [data-scene='nublado'] { --scene-fallback: linear-gradient(160deg, #1d2733, #4a5a6b 70%, #7d8c9b); }
 [data-scene='chuva'] { --scene-fallback: linear-gradient(160deg, #0b1220, #1f3347 70%, #3a5368); }
@@ -163,6 +164,7 @@ h1, h2, h3 { text-wrap: balance; }
 
 /* Cenas claras: escurece mais o lado do texto pra relogio e saudacao continuarem legiveis */
 [data-scene='praia'] .scene-veil:not(.soft),
+[data-scene='dia'] .scene-veil:not(.soft),
 [data-scene='frio'] .scene-veil:not(.soft),
 [data-scene='nublado'] .scene-veil:not(.soft) {
   background:

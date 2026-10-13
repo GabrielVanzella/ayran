@@ -15,7 +15,8 @@ import type { Scene } from './api'
 import { BASE } from './api'
 
 export const SCENES: { id: Scene; label: string }[] = [
-  { id: 'praia', label: 'Praia' },
+  { id: 'praia', label: 'Calor' },
+  { id: 'dia', label: 'Dia claro' },
   { id: 'sol', label: 'Pôr do sol' },
   { id: 'nublado', label: 'Nublado' },
   { id: 'chuva', label: 'Chuva' },

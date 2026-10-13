@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Cpu,
   Droplets,
+  Loader2,
   HardDrive,
   Lightbulb,
   MapPin,
@@ -12,6 +13,7 @@ import {
   Wind,
 } from 'lucide-react'
 import Dial from './Dial'
+import CityViewEditor from './CityViewEditor'
 import LocationPicker from './LocationPicker'
 import {
   getNews,
@@ -35,6 +37,9 @@ type Props = {
   userName: string
   online: boolean
   scene: Scene
+  cityName: string | null
+  cityState: 'idle' | 'generating' | 'ready'
+  onCityChanged: () => void
   pinned: Scene | null
   onPin: (s: Scene | null) => void
   weather: Weather | null
@@ -124,6 +129,17 @@ export default function Home(p: Props) {
               </>
             )}
           </button>
+          {p.cityName && p.cityState !== 'idle' && (
+            <p role="status" className="glow-text order-last flex basis-full items-center justify-end gap-2 text-xs text-white/80">
+              {p.cityState === 'generating' ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" /> O Ayran está criando a vista de {p.cityName}…
+                </>
+              ) : (
+                <>Vista de {p.cityName}, criada pelo Ayran</>
+              )}
+            </p>
+          )}
         </div>
 
         <div className="max-w-2xl">
@@ -194,7 +210,10 @@ export default function Home(p: Props) {
             />
           </div>
         ) : p.weather ? (
-          <Forecast weather={p.weather} city={p.location.name} onChangeCity={() => setEditingCity(true)} />
+          <>
+            <Forecast weather={p.weather} city={p.location.name} onChangeCity={() => setEditingCity(true)} />
+            <CityViewEditor cityName={p.location.name} onSaved={p.onCityChanged} onAuthError={p.onAuthError} />
+          </>
         ) : (
           <div className="grid h-full min-h-48 place-items-center text-center text-sm text-dim">
             {p.weatherError ? 'Não consegui consultar o clima agora.' : 'Carregando o clima…'}

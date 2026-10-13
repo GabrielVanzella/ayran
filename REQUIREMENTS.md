@@ -150,6 +150,9 @@ Referências: dashboard de casa inteligente em vidro fosco (Smartiva) + paisagem
 - [x] Cidade por busca ou "usar minha localização", salva por usuário; o usuário pode fixar uma cena (ou deixar "Automático")
 - [x] Tela inicial: relógio, clima agora, previsão de 7 dias, medidor circular do servidor (VRAM/RAM), serviços, conversas por dia (dados reais), notícias e ideias
 - [x] Cena em **tela cheia e nítida** (sem moldura), com painéis de vidro escuro por cima; cenas aumentadas de 768×512 para 2400×1600 com Real-ESRGAN x4 (`server/upscale-scenes.py`). Nas telas de leitura (chat, notícias…) o fundo fica desfocado pra não atrapalhar o texto
+- [x] **Fundo = vista da cidade do usuário** (pedido em 2026-10-13: "não quero imagens fixas"): o Ayran gera, uma vez por cidade e por clima, uma vista com o perfil urbano + entorno natural, aumenta a resolução e guarda em cache (`hub/backend/cityscenes.py`). Enquanto gera (~3 min neste notebook) vale a cena genérica. O dono pode **descrever a vista** (a IA não conhece a geografia de cada cidade) e as imagens são recriadas. É inspirada na cidade, **não é foto real**
+- [x] Regra de cena por clima corrigida: calor pela sensação térmica, "dia claro", pôr do sol só perto do nascer/pôr do sol real (Open-Meteo)
+- [x] Serviços se religam sozinhos: tarefa do Windows tenta iniciar a cada 5 min (`install-autostart.ps1`). Atenção: **registrar as tarefas de novo derruba as que estão rodando**; religar depois
 - [ ] Cenas geradas direto em alta resolução (SDXL no PC novo, 1920×1080) — o upscale melhora mas não cria detalhe novo
 - [ ] Resumo do dia feito pelo Ayran (clima + ideias + notícias)
 - [ ] Aplicar o mesmo acabamento às telas Chat, Criar, Notícias, Ideias e Música (hoje só herdam o material e a paleta)

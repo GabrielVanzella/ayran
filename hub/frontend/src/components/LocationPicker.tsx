@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Crosshair, Loader2, MapPin, Search, X } from 'lucide-react'
-import { AuthError, searchCities, type CityResult, type Location } from '../lib/api'
+import { AuthError, reverseCity, searchCities, type CityResult, type Location } from '../lib/api'
 
 type Props = { onPick: (l: Location) => void; onClose?: () => void; onAuthError: () => void; autoFocus?: boolean }
 
@@ -31,7 +31,12 @@ export default function LocationPicker({ onPick, onClose, onAuthError, autoFocus
   function locateMe() {
     if (!navigator.geolocation) return setError('Seu navegador não permite localização')
     navigator.geolocation.getCurrentPosition(
-      (p) => onPick({ name: 'Minha localização', lat: p.coords.latitude, lon: p.coords.longitude }),
+      async (p) => {
+        const { latitude: lat, longitude: lon } = p.coords
+        // o nome da cidade e o que permite gerar a vista dela; se falhar, a Central tenta de novo depois
+        const c = await reverseCity(lat, lon).catch(() => null)
+        onPick({ name: c?.name ?? 'Minha localização', region: c?.region, lat, lon })
+      },
       () => setError('Permissão de localização negada. Busque pelo nome da cidade.'),
       { timeout: 10_000 },
     )
@@ -69,7 +74,7 @@ export default function LocationPicker({ onPick, onClose, onAuthError, autoFocus
         {results.map((c) => (
           <li key={`${c.lat},${c.lon}`}>
             <button
-              onClick={() => onPick({ name: c.name, lat: c.lat, lon: c.lon })}
+              onClick={() => onPick({ name: c.name, region: c.region, lat: c.lat, lon: c.lon })}
               className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-left text-sm transition hover:bg-white/10"
             >
               <MapPin className="size-4 shrink-0 text-dim" />

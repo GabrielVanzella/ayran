@@ -14,12 +14,15 @@ import Backdrop from './components/Backdrop'
 import {
   AuthError,
   autoLogin,
+  BASE,
+  getCityScene,
   getSettings,
   getToken,
   getWeather,
   health,
   me,
   putSettings,
+  reverseCity,
   setToken,
   type Location,
   type Scene,
@@ -140,6 +143,7 @@ export default function App() {
   }
 
   async function changeLocation(location: Location) {
+    pin(null) // nova cidade: o fundo volta a seguir o clima sozinho
     setSettings((s) => (s ? { ...s, location } : s))
     await putSettings({ location }).catch(() => {})
   }
@@ -151,6 +155,56 @@ export default function App() {
 
   // Cena: o que o usuario fixou > ?scene= na URL > clima atual > hora do dia
   const scene: Scene = pinned ?? sceneFromUrl() ?? weather?.scene ?? sceneByClock()
+
+  // "Minha localizacao" (geolocalizacao do navegador) vira o nome da cidade, que a vista da cidade precisa.
+  const locName = settings?.location?.name
+  useEffect(() => {
+    if (!user || lat == null || lon == null || locName !== 'Minha localização') return
+    reverseCity(lat, lon)
+      .then((c) => {
+        const location: Location = { name: c.name, region: c.region, lat, lon }
+        setSettings((s) => (s ? { ...s, location } : s))
+        putSettings({ location }).catch(() => {})
+      })
+      .catch(() => {})
+  }, [user, lat, lon, locName])
+
+  // Vista da cidade do usuario no clima de agora: pede pro servidor e acompanha enquanto o Ayran gera.
+  const [cityImage, setCityImage] = useState<{ scene: Scene; url: string; city: string } | null>(null)
+  const [cityState, setCityState] = useState<'idle' | 'generating' | 'ready'>('idle')
+  const [cityTick, setCityTick] = useState(0)
+  useEffect(() => {
+    if (!user || lat == null || lon == null) {
+      setCityImage(null)
+      setCityState('idle')
+      return
+    }
+    let alive = true
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const check = async () => {
+      try {
+        const r = await getCityScene(scene)
+        if (!alive) return
+        if (r.status === 'ready') {
+          setCityImage({ scene, url: BASE + r.url, city: r.city })
+          setCityState('ready')
+          return
+        }
+        setCityImage(null) // enquanto nao fica pronta, vale a cena generica
+        if (r.status === 'generating') {
+          setCityState('generating')
+          timer = setTimeout(check, 15_000)
+        } else setCityState('idle')
+      } catch (e) {
+        if (e instanceof AuthError) logout()
+      }
+    }
+    check()
+    return () => {
+      alive = false
+      clearTimeout(timer)
+    }
+  }, [user, lat, lon, locName, scene, cityTick, logout])
 
   if (checking) {
     return (
@@ -177,7 +231,7 @@ export default function App() {
   return (
     <div data-scene={scene} className="relative h-full overflow-hidden">
       <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
-      <Backdrop scene={scene} soft={tab !== 'home'} />
+      <Backdrop scene={scene} imageUrl={cityImage?.scene === scene ? cityImage.url : null} soft={tab !== 'home'} />
 
       <div className="relative mx-auto flex h-full max-w-[1600px] p-2 sm:p-4">
         <div className="flex min-w-0 flex-1 flex-col">
@@ -270,6 +324,9 @@ export default function App() {
                   userName={user.name}
                   online={online}
                   scene={scene}
+                  cityName={settings?.location?.name ?? null}
+                  cityState={cityState}
+                  onCityChanged={() => setCityTick((t) => t + 1)}
                   pinned={pinned}
                   onPin={pin}
                   weather={weather}

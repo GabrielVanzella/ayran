@@ -25,8 +25,11 @@ foreach ($t in $tasks) {
         -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$(Join-Path $here $t.Script)`""
     $trigger = New-ScheduledTaskTrigger -AtLogOn -User $user
     $trigger.Delay = $t.Delay
+    # Vigia do vigia: a cada 5 min o Windows tenta iniciar a tarefa. Com MultipleInstances=IgnoreNew,
+    # se ela ja esta rodando nada acontece; se foi encerrada por qualquer motivo, sobe de novo.
+    $watchdog = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Minutes 5)
     $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
-    Register-ScheduledTask -TaskName $t.Name -Action $action -Trigger $trigger -Settings $settings `
+    Register-ScheduledTask -TaskName $t.Name -Action $action -Trigger @($trigger, $watchdog) -Settings $settings `
         -Principal $principal -Force | Out-Null
     "Tarefa registrada: $($t.Name)"
 }

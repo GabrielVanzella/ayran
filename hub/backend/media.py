@@ -19,6 +19,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from comfy import GPU_LOCK
+
 COMFY_URL = "http://127.0.0.1:8188"
 OLLAMA_URL = "http://127.0.0.1:11434"
 PROMPT_MODEL = "qwen3.5:4b"
@@ -207,7 +209,8 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
                 started = time.time()
                 set_job(job_id, status="gerando", error="")
                 try:
-                    files = await run_image(client, job)
+                    async with GPU_LOCK:  # uma geracao por vez na placa (galeria + cenas das cidades)
+                        files = await run_image(client, job)
                     set_job(job_id, status="pronto", outputs=json.dumps(files), error="",
                             finished_at=int(time.time()))
                 except Exception as e:

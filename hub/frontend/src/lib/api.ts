@@ -18,7 +18,7 @@ export type Idea = {
   created_at: number
   updated_at: number
 }
-export type Location = { name: string; lat: number; lon: number }
+export type Location = { name: string; region?: string; lat: number; lon: number }
 export type Settings = { spotify: string; topics: string[]; location: Location | null }
 
 export const AYRAN_MODEL = 'ayran'
@@ -279,7 +279,7 @@ export function generatePassword(length = 12): string {
 
 // ---------- clima / servidor ----------
 
-export type Scene = 'praia' | 'sol' | 'nublado' | 'chuva' | 'tempestade' | 'neblina' | 'noite' | 'frio'
+export type Scene = 'praia' | 'dia' | 'sol' | 'nublado' | 'chuva' | 'tempestade' | 'neblina' | 'noite' | 'frio'
 export type DayForecast = { date: string; code: number; label: string; max: number; min: number; rain: number | null }
 export type Weather = {
   timezone: string
@@ -316,3 +316,19 @@ export function timeAgo(unix: number): string {
   if (s < 86400) return `${Math.round(s / 3600)} h`
   return `${Math.round(s / 86400)} d`
 }
+
+// ---------- vista da cidade do usuario (gerada pelo Ayran) ----------
+
+export type CityScene =
+  | { status: 'ready'; url: string; city: string }
+  | { status: 'generating'; city: string }
+  | { status: 'needs-name' | 'nolocation' | 'error' | 'limit' }
+
+export const getCityScene = (scene: Scene) => request<CityScene>(`/api/city-scene?scene=${scene}`)
+export const reverseCity = (lat: number, lon: number) =>
+  request<{ name: string; region: string; country: string }>(`/api/reverse?lat=${lat}&lon=${lon}`)
+
+export type CityInfo = { name: string; desc: string; custom: boolean; editable: boolean } | { status: 'nolocation' }
+export const getCityInfo = () => request<CityInfo>('/api/city-scene/info')
+export const setCityInfo = (desc: string) =>
+  request('/api/city-scene/info', { method: 'PUT', body: JSON.stringify({ desc }) })

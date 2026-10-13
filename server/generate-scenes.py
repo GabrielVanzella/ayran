@@ -21,6 +21,8 @@ SIZE, STEPS = "paisagem", 30
 SCENES = {
     "praia": "tropical beach at midday, turquoise water, white sand, palm trees, clear blue sky, bright sunlight, "
              "wide angle landscape photography, highly detailed, no people",
+    "dia": "bright sunny day over green rolling hills and a clear lake, blue sky with a few white clouds, vivid colors, "
+           "wide angle landscape photography, highly detailed, no people",
     "sol": "mountain valley at golden hour, dramatic orange and purple sunset sky, river winding through the valley, "
            "layered mountains, autumn forest, wide angle landscape photography, highly detailed, no people",
     "nublado": "overcast sky over green rolling hills and a calm lake, soft diffused light, muted tones, "
