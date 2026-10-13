@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
 from feeds import TOPICS
+from account import build_router as build_account_router
 from cityscenes import build_router as build_city_router
 from media import build_router as build_media_router, init_media_db
 from system import build_router as build_system_router
@@ -189,6 +190,7 @@ def forget_user(user_id: str):
 
 
 app.include_router(build_team_router(current_user, forget_user))
+app.include_router(build_account_router(current_user))
 
 
 # ---------------- login automatico (so no proprio servidor) ----------------

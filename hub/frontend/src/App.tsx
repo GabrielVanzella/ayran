@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Home as HomeIcon, Lightbulb, LogOut, MessageSquare, Music2, Newspaper, Palette, Search, Settings2, Users } from 'lucide-react'
+import Account from './components/Account'
 import Team from './components/Team'
 import Create from './components/Create'
 import Login from './components/Login'
@@ -73,6 +74,7 @@ export default function App() {
   const [weatherError, setWeatherError] = useState(false)
   const [pinned, setPinned] = useState<Scene | null>(loadPinnedScene)
   const [query, setQuery] = useState('')
+  const [accountOpen, setAccountOpen] = useState(false)
 
   const logout = useCallback(() => {
     setToken(null)
@@ -231,6 +233,17 @@ export default function App() {
   return (
     <div data-scene={scene} className="relative h-full overflow-hidden">
       <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
+      {accountOpen && (
+        <Account
+          user={user}
+          onClose={() => setAccountOpen(false)}
+          onLogout={() => {
+            setAccountOpen(false)
+            logout()
+          }}
+          onAuthError={logout}
+        />
+      )}
       <Backdrop scene={scene} imageUrl={cityImage?.scene === scene ? cityImage.url : null} soft={tab !== 'home'} />
 
       <div className="relative mx-auto flex h-full max-w-[1600px] p-2 sm:p-4">
@@ -265,13 +278,19 @@ export default function App() {
               />
             </form>
 
-            <div className="glass-pill flex shrink-0 items-center gap-2.5 rounded-full py-1 pl-1 pr-1 sm:pr-4">
+            <button
+              onClick={() => setAccountOpen(true)}
+              title="Minha conta"
+              aria-label="Minha conta"
+              aria-haspopup="dialog"
+              className="glass-pill flex shrink-0 items-center gap-2.5 rounded-full py-1 pl-1 pr-1 text-left transition hover:bg-white/10 sm:pr-4"
+            >
               <span className="grid size-8 place-items-center rounded-full bg-white text-sm font-semibold text-void">{initial}</span>
               <span className="hidden text-sm leading-tight sm:block">
                 {user.name.split(' ')[0]}
                 <span className="block text-[11px] text-dim">{user.role === 'admin' ? 'Administrador' : 'Usuário'}</span>
               </span>
-            </div>
+            </button>
           </header>
 
           <div className="flex min-h-0 flex-1 gap-2 pt-4 sm:gap-5">

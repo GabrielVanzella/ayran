@@ -332,3 +332,7 @@ export type CityInfo = { name: string; desc: string; custom: boolean; editable: 
 export const getCityInfo = () => request<CityInfo>('/api/city-scene/info')
 export const setCityInfo = (desc: string) =>
   request('/api/city-scene/info', { method: 'PUT', body: JSON.stringify({ desc }) })
+
+// ---------- minha conta ----------
+export const changePassword = (current: string, next: string) =>
+  request<{ ok: boolean }>('/api/account/password', { method: 'POST', body: JSON.stringify({ current, new: next }) })
