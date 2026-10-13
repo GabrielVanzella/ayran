@@ -233,7 +233,7 @@ export type MediaJob = {
   kind: 'image' | 'video'
   prompt: string
   final_prompt: string
-  params: { size?: string; style?: string; seed?: number }
+  params: { size?: string; style?: string; seed?: number; ref?: boolean; strength?: number }
   status: 'na_fila' | 'gerando' | 'pronto' | 'erro'
   error: string
   outputs: string[]
@@ -252,6 +252,21 @@ export const createImage = (body: {
   lora_clip?: number | null
 }) => request<{ id: string }>('/api/media/image', { method: 'POST', body: JSON.stringify(body) })
 export const deleteMedia = (id: string) => request(`/api/media/${id}`, { method: 'DELETE' })
+
+/** Imagem nova a partir de uma imagem de referencia (img2img). */
+export async function createImageFromRef(form: FormData): Promise<{ id: string }> {
+  const res = await fetch(BASE + '/api/media/image-ref', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getToken()}` }, // sem Content-Type: o navegador monta o multipart
+    body: form,
+  })
+  if (res.status === 401) throw new AuthError('Sessão expirada')
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(typeof body.detail === 'string' ? body.detail : `Erro ${res.status}`)
+  }
+  return res.json()
+}
 
 export async function mediaFileUrl(id: string, n: number): Promise<string> {
   const res = await fetch(BASE + `/api/media/${id}/file/${n}`, { headers: { Authorization: `Bearer ${getToken()}` } })

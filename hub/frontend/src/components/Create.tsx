@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Clapperboard, Download, ImageIcon, Loader2, Lock, Sparkles, Trash2, Wand2, X } from 'lucide-react'
+import { Clapperboard, Download, ImageIcon, ImagePlus, Loader2, Lock, Sparkles, Trash2, Wand2, X } from 'lucide-react'
 import {
   AuthError,
   createImage,
+  createImageFromRef,
   deleteMedia,
   getMediaCapabilities,
   listMedia,
@@ -20,6 +21,26 @@ const STYLE_LABELS: Record<string, string> = {
   '3d': '3D',
   conceito: 'Arte conceitual',
 }
+const STRENGTHS = [
+  { value: 0.4, label: 'Bem parecida' },
+  { value: 0.65, label: 'Equilibrada' },
+  { value: 0.85, label: 'Mais livre' },
+]
+
+/** Reduz a imagem no navegador (lado maior 1024) antes de enviar: print de tela chega a 5 MB. */
+async function shrink(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  const scale = Math.min(1, 1024 / Math.max(bitmap.width, bitmap.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close()
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Falha ao preparar a imagem'))), 'image/jpeg', 0.9),
+  )
+}
+
 const STATUS_LABELS: Record<string, string> = { na_fila: 'Na fila', gerando: 'Gerando', pronto: 'Pronto', erro: 'Erro' }
 
 export default function Create({ onAuthError }: { onAuthError: () => void }) {
@@ -33,6 +54,10 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
   const [viewing, setViewing] = useState<MediaJob | null>(null)
+  const [ref, setRef] = useState<{ file: File; url: string } | null>(null)
+  const [strength, setStrength] = useState(0.65)
+  const [dragging, setDragging] = useState(false)
+  const fileInput = useRef<HTMLInputElement>(null)
 
   const fail = useCallback((e: unknown) => (e instanceof AuthError ? onAuthError() : null), [onAuthError])
 
@@ -51,13 +76,57 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
     return () => clearInterval(t)
   }, [pending, refresh])
 
+  const pickFile = useCallback((file: File | null | undefined) => {
+    if (!file) return
+    if (!file.type.startsWith('image/')) return setError('Escolha um arquivo de imagem (JPG, PNG ou WebP).')
+    if (file.size > 25 * 1024 * 1024) return setError('Essa imagem é grande demais (máximo 25 MB).')
+    setError('')
+    setRef((old) => {
+      if (old) URL.revokeObjectURL(old.url)
+      return { file, url: URL.createObjectURL(file) }
+    })
+  }, [])
+
+  function clearRef() {
+    setRef((old) => {
+      if (old) URL.revokeObjectURL(old.url)
+      return null
+    })
+    if (fileInput.current) fileInput.current.value = ''
+  }
+
+  // Ctrl+V em qualquer lugar da aba: se tem imagem na area de transferencia, vira a referencia
+  useEffect(() => {
+    if (mode !== 'image') return
+    const onPaste = (e: ClipboardEvent) => {
+      const item = Array.from(e.clipboardData?.items ?? []).find((i) => i.kind === 'file' && i.type.startsWith('image/'))
+      const file = item?.getAsFile()
+      if (file) {
+        e.preventDefault()
+        pickFile(file)
+      }
+    }
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+  }, [mode, pickFile])
+
   async function generate(e: React.FormEvent) {
     e.preventDefault()
     if (!prompt.trim() || sending) return
     setSending(true)
     setError('')
     try {
-      await createImage({ prompt: prompt.trim(), size, style, enhance })
+      if (ref) {
+        const form = new FormData()
+        form.append('prompt', prompt.trim())
+        form.append('strength', String(strength))
+        form.append('style', style)
+        form.append('enhance', String(enhance))
+        form.append('image', await shrink(ref.file), 'referencia.jpg')
+        await createImageFromRef(form)
+      } else {
+        await createImage({ prompt: prompt.trim(), size, style, enhance })
+      }
       await refresh()
     } catch (err) {
       fail(err)
@@ -103,8 +172,74 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
               placeholder="Descreva a imagem em português… ex: um farol numa ilha durante uma tempestade, ao pôr do sol"
               className="w-full resize-none rounded-3xl border border-line bg-white/[0.06] px-4 py-3 outline-none focus:border-neon/50"
             />
+            <div
+              onDragOver={(e) => {
+                e.preventDefault()
+                setDragging(true)
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault()
+                setDragging(false)
+                pickFile(e.dataTransfer.files[0])
+              }}
+              className={`rounded-3xl border border-dashed p-4 transition ${dragging ? 'border-white/70 bg-white/10' : 'border-white/20'}`}
+            >
+              {ref ? (
+                <div className="flex flex-wrap items-center gap-4">
+                  <img src={ref.url} alt="Imagem de referência" className="size-20 rounded-2xl object-cover" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <p className="text-sm">Imagem de referência pronta. O Ayran cria uma nova a partir dela.</p>
+                    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quanto a nova imagem deve se parecer com a referência">
+                      <span className="text-xs uppercase tracking-wider text-dim">Parecida com a original</span>
+                      {STRENGTHS.map((st) => (
+                        <button
+                          type="button"
+                          key={st.value}
+                          aria-pressed={strength === st.value}
+                          onClick={() => setStrength(st.value)}
+                          className={`rounded-full px-3 py-1 text-xs transition ${
+                            strength === st.value ? 'bg-white text-void' : 'border border-line text-dim hover:text-ink'
+                          }`}
+                        >
+                          {st.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearRef}
+                    aria-label="Remover a imagem de referência"
+                    className="self-start rounded-full p-2 text-dim hover:bg-white/10 hover:text-ink"
+                  >
+                    <X className="size-5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInput.current?.click()}
+                  className="flex w-full items-center gap-3 text-left text-sm text-dim transition hover:text-ink"
+                >
+                  <ImagePlus className="size-5 shrink-0" />
+                  <span>
+                    Quer partir de uma imagem? <strong className="font-medium text-ink">Cole com Ctrl+V</strong>, arraste para cá ou clique para escolher.
+                  </span>
+                </button>
+              )}
+              <input
+                ref={fileInput}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                tabIndex={-1}
+                aria-label="Escolher imagem de referência"
+                onChange={(e) => pickFile(e.target.files?.[0])}
+              />
+            </div>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              <Chips label="Formato" options={caps?.sizes ?? ['quadrado']} labels={SIZE_LABELS} value={size} onChange={setSize} />
+              {!ref && <Chips label="Formato" options={caps?.sizes ?? ['quadrado']} labels={SIZE_LABELS} value={size} onChange={setSize} />}
               <Chips label="Estilo" options={caps?.styles ?? ['livre']} labels={STYLE_LABELS} value={style} onChange={setStyle} />
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -117,13 +252,14 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
                 className="ml-auto flex items-center gap-2 rounded-full bg-neon px-5 py-2.5 font-semibold text-void transition hover:bg-neon-soft disabled:opacity-40"
               >
                 {sending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-                Gerar imagem
+                {ref ? 'Gerar a partir da imagem' : 'Gerar imagem'}
               </button>
             </div>
             {error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>}
             <p className="text-xs text-dim">
               Neste notebook (GPU de 4 GB) cada imagem leva de ~30s a alguns minutos. Uma por vez — os pedidos entram na
               fila.
+              {ref && ' Com imagem de referência o gerador não aceita nudez nem conteúdo sexual, e a imagem enviada não fica guardada.'}
             </p>
           </form>
 
@@ -243,6 +379,7 @@ function JobCard({ job, onOpen, onDelete }: { job: MediaJob; onOpen: () => void;
       </button>
       <div className="flex items-center gap-2 p-2.5">
         <p className="line-clamp-2 flex-1 text-xs text-dim" title={job.prompt}>
+          {job.params.ref && <ImagePlus className="mr-1 inline size-3.5 align-text-bottom" aria-label="Criada a partir de uma referência" />}
           {job.prompt}
         </p>
         <button onClick={onDelete} className="rounded-lg p-1.5 text-dim opacity-0 hover:text-red-300 group-hover:opacity-100" aria-label="Apagar">

@@ -46,7 +46,10 @@ async def _run(client: httpx.AsyncClient, workflow: dict, timeout_s: int = 15 * 
     deadline = time.time() + timeout_s
     while time.time() < deadline:
         await asyncio.sleep(2)
-        hist = (await client.get(f"{COMFY_URL}/history/{prompt_id}")).json().get(prompt_id)
+        try:
+            hist = (await client.get(f"{COMFY_URL}/history/{prompt_id}", timeout=60)).json().get(prompt_id)
+        except httpx.TimeoutException:
+            continue  # a placa de 4 GB as vezes trava o ComfyUI por minutos; espera em vez de falhar
         if not hist:
             continue
         if hist.get("status", {}).get("status_str") == "error":

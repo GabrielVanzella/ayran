@@ -5,6 +5,7 @@ O pedido em portugues e traduzido/melhorado pelo Ayran (modelo leve) pro ingles 
 """
 
 import asyncio
+import io
 import json
 import os
 import random
@@ -15,10 +16,12 @@ import uuid
 from pathlib import Path
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
+from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
+import safety
 from comfy import GPU_LOCK
 
 COMFY_URL = "http://127.0.0.1:8188"
@@ -41,6 +44,21 @@ _BLOCK_MINORS = re.compile(
     r"underage|loli\w*|shota\w*|adolescente|teen\w*)\b",
     re.IGNORECASE,
 )
+
+# COM IMAGEM DE REFERENCIA (img2img) o gerador nao aceita nudez nem conteudo sexual: a partir da foto de uma
+# pessoa real isso vira montagem sem consentimento (crime). Vale pro texto, pra imagem enviada e pra gerada.
+_BLOCK_REF_EXPLICIT = re.compile(
+    r"\b(porn\w*|pornografi\w*|hentai|nsfw|sexo|sexual|sexy|sex|nu[ao]s?|nud[ea]s?|nudez|nude|naked|"
+    r"pelad[oa]s?|sem roupas?|desnud\w*|lingerie|topless|seios?|mamilos?|nipples?|genita\w*|p[êe]nis|penis|"
+    r"vagina|er[óo]tic\w*|erotic\w*|orgasm\w*|transa\w*)\b",
+    re.IGNORECASE,
+)
+REF_NEGATIVE = ", nsfw, nude, naked, nipples, explicit, sexual"
+REF_CHECKPOINT = "DreamShaper_8_pruned.safetensors"  # neutro; o padrao do servidor e outro modelo
+REF_BLOCKED_MESSAGE = "Com imagem de referência o gerador não aceita nudez nem conteúdo sexual."
+REF_MAX_BYTES = 10 * 1024 * 1024
+REF_MAX_SIDE = 768
+REF_MIN_SIDE = 256
 
 SIZES = {"quadrado": (512, 512), "retrato": (512, 768), "paisagem": (768, 512)}
 STYLES = {
@@ -96,6 +114,10 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
     router = APIRouter(prefix="/api/media")
     queue: asyncio.Queue[str] = asyncio.Queue()
     media_dir.mkdir(parents=True, exist_ok=True)
+    refs_dir = media_dir / "refs"
+    refs_dir.mkdir(exist_ok=True)
+    for stale in refs_dir.glob("*.jpg"):  # sobras de trabalhos que o reinicio do servidor interrompeu
+        stale.unlink(missing_ok=True)
 
     def set_job(job_id: str, **fields):
         sets = ", ".join(f"{k} = :{k}" for k in fields)
@@ -135,28 +157,46 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
 
     async def run_image(client: httpx.AsyncClient, job: dict):
         params = json.loads(job["params"])
+        ref = bool(params.get("ref"))
+        ref_path = refs_dir / f"{job['id']}.jpg"
+        if ref:
+            set_job(job["id"], status="gerando", error="verificando a imagem de referência…")
+            try:
+                if await safety.is_blocked(ref_path):
+                    raise ValueError(REF_BLOCKED_MESSAGE)
+            except RuntimeError as e:  # nao deu pra verificar: na duvida, recusa
+                raise ValueError(f"Não consegui verificar a imagem de referência, tente de novo. ({e})")
         final = job["prompt"]
         if params.get("enhance", True):
             set_job(job["id"], status="gerando", error="Ayran escrevendo o prompt…")
             final = await enhance_prompt(client, job["prompt"])
         if _BLOCK_MINORS.search(job["prompt"]) or _BLOCK_MINORS.search(final):
             raise ValueError("Não gero conteúdo envolvendo menores de idade.")
+        if ref and (_BLOCK_REF_EXPLICIT.search(job["prompt"]) or _BLOCK_REF_EXPLICIT.search(final)):
+            raise ValueError(REF_BLOCKED_MESSAGE)
         style = STYLES.get(params.get("style", "livre"), "")
         final = f"{final}, {style}" if style else final
         set_job(job["id"], final_prompt=final, error="liberando a GPU…")
         await free_ollama_gpu(client)
 
-        width, height = SIZES.get(params.get("size"), SIZES["quadrado"])
+        width, height = (params["width"], params["height"]) if ref else SIZES.get(params.get("size"), SIZES["quadrado"])
         values = {
             "seed": params.get("seed") or random.randint(1, 2**31),
             "steps": params.get("steps", 25),
-            "checkpoint": params.get("checkpoint") or CHECKPOINT,
+            "checkpoint": REF_CHECKPOINT if ref else (params.get("checkpoint") or CHECKPOINT),
             "width": width,
             "height": height,
             "prompt": final,
-            "negative": BASE_NEGATIVE,
+            "negative": BASE_NEGATIVE + (REF_NEGATIVE if ref else ""),
         }
-        if LORA:
+        if ref:
+            up = await client.post(f"{COMFY_URL}/upload/image", data={"overwrite": "true"},
+                                   files={"image": (f"ayran-ref-{job['id']}.jpg", ref_path.read_bytes(), "image/jpeg")})
+            up.raise_for_status()
+            values["image"] = up.json()["name"]
+            values["denoise"] = params.get("strength", 0.65)
+            workflow_name = "image_sd15_img2img.json"  # com referencia nunca carrega a LoRA do servidor
+        elif LORA:
             values["lora"] = LORA
             values["lora_model"] = params.get("lora_model", LORA_STRENGTH_MODEL)
             values["lora_clip"] = params.get("lora_clip", LORA_STRENGTH_CLIP)
@@ -178,7 +218,10 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
         deadline = time.time() + 15 * 60
         while time.time() < deadline:
             await asyncio.sleep(1.5)
-            hist = (await client.get(f"{COMFY_URL}/history/{prompt_id}")).json().get(prompt_id)
+            try:
+                hist = (await client.get(f"{COMFY_URL}/history/{prompt_id}", timeout=60)).json().get(prompt_id)
+            except httpx.TimeoutException:
+                continue  # a placa de 4 GB as vezes trava o ComfyUI por minutos; espera em vez de falhar
             if not hist:
                 continue
             status = hist.get("status", {})
@@ -194,6 +237,16 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
                     name = f"{job['id']}_{i}.png"
                     (media_dir / name).write_bytes(data)
                     files.append(name)
+                if ref:  # a imagem gerada tambem passa pela verificacao antes de aparecer
+                    set_job(job["id"], error="verificando a imagem gerada…")
+                    try:
+                        blocked = any([await safety.is_blocked(media_dir / f) for f in files])
+                    except RuntimeError:
+                        blocked = True
+                    if blocked:
+                        for f in files:
+                            (media_dir / f).unlink(missing_ok=True)
+                        raise ValueError(REF_BLOCKED_MESSAGE)
                 return files
         raise TimeoutError("A geração passou de 15 minutos")
 
@@ -216,6 +269,7 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
                 except Exception as e:
                     set_job(job_id, status="erro", error=str(e) or e.__class__.__name__, finished_at=int(time.time()))
                 finally:
+                    (refs_dir / f"{job_id}.jpg").unlink(missing_ok=True)  # a referencia nao fica guardada
                     try:
                         await client.post(f"{COMFY_URL}/free", json={"unload_models": True, "free_memory": True})
                     except Exception:
@@ -251,6 +305,61 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
                 "insert into media_jobs (id, user_id, kind, prompt, params, status, created_at) "
                 "values (?, ?, 'image', ?, ?, 'na_fila', ?)",
                 (job_id, user["id"], req.prompt.strip(), json.dumps(req.model_dump(exclude={"prompt"})), int(time.time())),
+            )
+        await queue.put(job_id)
+        return {"id": job_id, "position": queue.qsize()}
+
+    @router.post("/image-ref")
+    async def create_image_from_ref(
+        prompt: str = Form(min_length=2, max_length=1000),
+        strength: float = Form(0.65, ge=0.2, le=0.95),
+        style: str = Form("livre"),
+        steps: int = Form(25, ge=10, le=40),
+        enhance: bool = Form(True),
+        image: UploadFile = File(...),
+        user=Depends(current_user),
+    ):
+        """Cria uma imagem nova a partir de uma imagem de referencia (img2img). Sem nudez/sexual e sem menores."""
+        if _BLOCK_MINORS.search(prompt):
+            raise HTTPException(400, "Não gero conteúdo envolvendo menores de idade.")
+        if _BLOCK_REF_EXPLICIT.search(prompt):
+            raise HTTPException(400, REF_BLOCKED_MESSAGE)
+        data = await image.read(REF_MAX_BYTES + 1)
+        if len(data) > REF_MAX_BYTES:
+            raise HTTPException(413, "A imagem passa de 10 MB")
+        try:
+            Image.open(io.BytesIO(data)).verify()
+            im = Image.open(io.BytesIO(data))
+            fmt = im.format
+            im = ImageOps.exif_transpose(im).convert("RGB")
+        except Exception:
+            raise HTTPException(400, "Não consegui ler essa imagem. Use JPG, PNG ou WebP.")
+        if fmt not in ("JPEG", "PNG", "WEBP"):
+            raise HTTPException(400, "Use uma imagem JPG, PNG ou WebP.")
+        w, h = im.size
+        if min(w, h) < 64:
+            raise HTTPException(400, "A imagem é pequena demais.")
+        scale = min(1.0, REF_MAX_SIDE / max(w, h))  # so reduz
+        if min(w, h) * scale < REF_MIN_SIDE:
+            scale = REF_MIN_SIDE / min(w, h)
+        nw, nh = max(64, round(w * scale / 8) * 8), max(64, round(h * scale / 8) * 8)
+        while nw * nh > 600_000 or max(nw, nh) > 1024:  # 4 GB de VRAM: limite de area
+            nw, nh = max(64, round(nw * 0.9 / 8) * 8), max(64, round(nh * 0.9 / 8) * 8)
+        im = im.resize((nw, nh), Image.LANCZOS)
+
+        job_id = uuid.uuid4().hex
+        im.save(refs_dir / f"{job_id}.jpg", quality=92)
+        ratio = nw / nh
+        params = {
+            "ref": True, "strength": strength, "style": style if style in STYLES else "livre", "steps": steps,
+            "enhance": enhance, "width": nw, "height": nh,
+            "size": "paisagem" if ratio > 1.15 else "retrato" if ratio < 0.87 else "quadrado",
+        }
+        with db() as conn:
+            conn.execute(
+                "insert into media_jobs (id, user_id, kind, prompt, params, status, created_at) "
+                "values (?, ?, 'image', ?, ?, 'na_fila', ?)",
+                (job_id, user["id"], prompt.strip(), json.dumps(params), int(time.time())),
             )
         await queue.put(job_id)
         return {"id": job_id, "position": queue.qsize()}

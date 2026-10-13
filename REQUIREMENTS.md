@@ -280,3 +280,13 @@ Itens originais da fase:
 - Como modelos de imagem/vídeo funcionam (difusão: remover ruído gradualmente guiado por texto)
 - Camadas de "adaptar" uma IA pronta: prompt → RAG → tool calling/agentes → fine-tuning (LoRA) → re-treino do zero (inviável para indivíduo)
 - Diferença entre treino (caro, feito uma vez pelo laboratório) e inferência (rodar o modelo pronto, barato — é o que fazemos localmente)
+
+### Registro de 2026-10-13 (tarde) — o que mudou e o que aprendemos
+- [x] **Aba Criar aceita imagem de referência** (Ctrl+V, arrastar ou escolher arquivo) + 3 níveis de "quanto se parecer" (img2img, `workflows/image_sd15_img2img.json`). Com referência o gerador **não aceita nudez/sexual nem menores** — checado no texto, na imagem enviada e na gerada (`safety.py`: ViT Falconsai na CPU; se a verificação falhar, recusa). A referência é apagada ao fim do trabalho
+- [x] **Minha conta**: trocar a senha pela Central (`account.py`); mantém a entrada automática do servidor em dia
+- [x] **O Ayran sabe quem está falando**: o roteador injeta nome e papel de quem conversa (antes tratava todos como o Gabriel) e que a VZ tem equipe. Nunca revela conversa de uma pessoa a outra
+- [x] **Funcionário comum agora consegue conversar com o Ayran**: o modelo precisava de acesso público de leitura (`server/publish-model.py`). Antes só administradores viam o modelo ("Model not found"). Rodar de novo após reinstalar o Open WebUI
+- [x] Espera tolerante: o ComfyUI travava a consulta quando a GPU de 4 GB ficava sem VRAM (modelo de texto + imagem juntos); os trabalhos de imagem agora esperam em vez de falhar
+- [x] Notebook-servidor **não dorme mais na bateria** (antes dormia em 3 min; ficou em espera de 13h36 às 15h22 e derrubou o túnel). Tampa fechada = não faz nada, na tomada e na bateria
+- [ ] Douglas foi criado como **Administrador**: admin vê a aba Equipe (cria/remove acessos), usa o modo `/dolphin` e pode ler conversas de todos. Rebaixar para Funcionário se não for a intenção
+- [ ] A criação de acesso pela aba Equipe deve deixar **Funcionário** como padrão visível e pedir confirmação ao escolher Administrador
