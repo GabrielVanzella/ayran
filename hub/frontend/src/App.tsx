@@ -162,7 +162,7 @@ export default function App() {
   if (!user) {
     return (
       <div data-scene={scene} className="relative h-full overflow-y-auto">
-        <Backdrop scene={scene} />
+        <Backdrop scene={scene} soft />
         <div className="relative min-h-full">
           <Login onLogin={setUser} />
         </div>
@@ -177,12 +177,12 @@ export default function App() {
   return (
     <div data-scene={scene} className="relative h-full overflow-hidden">
       <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
-      <Backdrop scene={scene} />
+      <Backdrop scene={scene} soft={tab !== 'home'} />
 
       <div className="relative mx-auto flex h-full max-w-[1600px] p-2 sm:p-4">
-        <div className="glass-frame flex min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] sm:rounded-[36px]">
+        <div className="flex min-w-0 flex-1 flex-col">
           {/* barra de topo */}
-          <header className="flex items-center gap-3 px-4 pt-4 sm:gap-4 sm:px-6">
+          <header className="flex items-center gap-3 px-2 pt-1 sm:gap-4 sm:px-3">
             <div className="flex items-center gap-2.5">
               <Orb size={30} />
               <span className="hidden text-lg font-semibold tracking-wide sm:inline">Ayran</span>
@@ -220,7 +220,7 @@ export default function App() {
             </div>
           </header>
 
-          <div className="flex min-h-0 flex-1 gap-2 px-2 pt-3 sm:gap-4 sm:px-4">
+          <div className="flex min-h-0 flex-1 gap-2 pt-4 sm:gap-5">
             {/* navegacao lateral em capsula (desktop) */}
             <nav className="hidden shrink-0 flex-col items-center justify-between py-1 md:flex" aria-label="Navegação">
               <div className="glass-pill flex flex-col gap-2 rounded-full p-2">
@@ -294,15 +294,15 @@ export default function App() {
           </div>
 
           {settings?.spotify && (
-            <div className="overflow-hidden px-3 pb-2 sm:px-5">
-              <div className="overflow-hidden rounded-2xl">
+            <div className="px-0 pt-3 sm:px-14">
+              <div className="overflow-hidden rounded-3xl border border-white/15 shadow-2xl shadow-black/50">
                 <Player url={settings.spotify} />
               </div>
             </div>
           )}
 
           {/* navegacao inferior (celular) */}
-          <nav className="flex border-t border-white/10 pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Navegação">
+          <nav className="glass-pill mt-2 flex rounded-3xl pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Navegação">
             {nav.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}

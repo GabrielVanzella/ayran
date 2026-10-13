@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import type { Scene } from '../lib/api'
 import { sceneUrl } from '../lib/weather'
 
-/** Fundo da aplicacao: a cena do clima, desfocada, com transicao suave entre cenas. */
-export default function Backdrop({ scene }: { scene: Scene }) {
+/**
+ * Fundo da aplicacao: a cena do clima ocupando a tela inteira.
+ * Nitida na tela inicial; desfocada e escurecida (`soft`) nas telas de leitura, pro texto continuar legivel.
+ */
+export default function Backdrop({ scene, soft = false }: { scene: Scene; soft?: boolean }) {
   const [layers, setLayers] = useState<{ scene: Scene; key: number }[]>([{ scene, key: 0 }])
 
   useEffect(() => {
@@ -18,11 +21,11 @@ export default function Backdrop({ scene }: { scene: Scene }) {
         <div
           key={l.key}
           data-scene={l.scene}
-          className="scene-layer"
+          className={`scene-layer ${soft ? 'soft' : ''}`}
           style={{ backgroundImage: `url(${sceneUrl(l.scene)}), var(--scene-fallback)` }}
         />
       ))}
-      <div className="scene-veil" />
+      <div className={`scene-veil ${soft ? 'soft' : ''}`} />
     </>
   )
 }

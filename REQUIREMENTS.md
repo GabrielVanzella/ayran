@@ -149,7 +149,8 @@ Referências: dashboard de casa inteligente em vidro fosco (Smartiva) + paisagem
 - [x] **Tema que muda com o clima**: Open-Meteo (grátis, sem chave) → cena de fundo: praia (≥ 28 °C), pôr do sol, nublado, chuva, tempestade, neblina, noite, frio. Cenas geradas pelo próprio gerador de imagens (`server/generate-scenes.py`)
 - [x] Cidade por busca ou "usar minha localização", salva por usuário; o usuário pode fixar uma cena (ou deixar "Automático")
 - [x] Tela inicial: relógio, clima agora, previsão de 7 dias, medidor circular do servidor (VRAM/RAM), serviços, conversas por dia (dados reais), notícias e ideias
-- [ ] Cenas em resolução maior (SDXL no PC novo, 1920×1080) — no notebook são 768×512 desfocadas
+- [x] Cena em **tela cheia e nítida** (sem moldura), com painéis de vidro escuro por cima; cenas aumentadas de 768×512 para 2400×1600 com Real-ESRGAN x4 (`server/upscale-scenes.py`). Nas telas de leitura (chat, notícias…) o fundo fica desfocado pra não atrapalhar o texto
+- [ ] Cenas geradas direto em alta resolução (SDXL no PC novo, 1920×1080) — o upscale melhora mas não cria detalhe novo
 - [ ] Resumo do dia feito pelo Ayran (clima + ideias + notícias)
 - [ ] Aplicar o mesmo acabamento às telas Chat, Criar, Notícias, Ideias e Música (hoje só herdam o material e a paleta)
 

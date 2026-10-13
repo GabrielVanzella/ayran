@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Crosshair, Loader2, MapPin, Search, X } from 'lucide-react'
 import { AuthError, searchCities, type CityResult, type Location } from '../lib/api'
 
-type Props = { onPick: (l: Location) => void; onClose?: () => void; onAuthError: () => void }
+type Props = { onPick: (l: Location) => void; onClose?: () => void; onAuthError: () => void; autoFocus?: boolean }
 
-export default function LocationPicker({ onPick, onClose, onAuthError }: Props) {
+export default function LocationPicker({ onPick, onClose, onAuthError, autoFocus = false }: Props) {
   const [q, setQ] = useState('')
   const [results, setResults] = useState<CityResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -42,7 +42,7 @@ export default function LocationPicker({ onPick, onClose, onAuthError }: Props) 
       <div className="flex items-center gap-2 rounded-full glass-pill px-4 py-2.5 focus-within:border-white/40">
         <Search className="size-4 text-dim" />
         <input
-          autoFocus
+          autoFocus={autoFocus}
           name="cidade"
           autoComplete="off"
           value={q}

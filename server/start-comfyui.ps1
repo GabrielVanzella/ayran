@@ -16,6 +16,7 @@ ayran:
     checkpoints: checkpoints
     vae: vae
     loras: loras
+    upscale_models: upscale_models
     diffusion_models: diffusion_models
     text_encoders: text_encoders
     clip_vision: clip_vision

@@ -28,7 +28,7 @@ import {
   type SystemInfo,
   type Weather,
 } from '../lib/api'
-import { SCENES, sceneUrl, weatherIcon, weekday } from '../lib/weather'
+import { SCENES, weatherIcon, weekday } from '../lib/weather'
 import type { Tab } from '../App'
 
 type Props = {
@@ -91,29 +91,11 @@ export default function Home(p: Props) {
   const first = p.userName.split(' ')[0]
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-4 lg:grid-cols-12">
-      {/* ---------- hero: a cena em foco ---------- */}
-      <section
-        data-scene={p.scene}
-        className="relative order-1 min-h-[460px] overflow-hidden rounded-[28px] border border-white/15 lg:col-span-8 lg:row-span-1"
-        style={{ backgroundImage: 'var(--scene-fallback)' }}
-      >
-        <img
-          key={p.scene}
-          src={sceneUrl(p.scene)}
-          alt=""
-          width={768}
-          height={512}
-          fetchPriority="high"
-          decoding="async"
-          className="absolute inset-0 size-full object-cover"
-          onError={(e) => (e.currentTarget.style.display = 'none')}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/5 to-black/65" />
-
-        <div className="relative flex h-full min-h-[460px] flex-col justify-between gap-6 p-5 sm:p-7">
-          {/* escolher a cena */}
-          <div className="scroll-thin -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Cena de fundo">
+    <div className="mx-auto max-w-7xl">
+      {/* ---------- hero: sem cartao, direto sobre a paisagem de fundo ---------- */}
+      <section className="flex min-h-[max(440px,calc(100svh-17rem))] flex-col justify-between gap-10 pb-10">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="scroll-thin -mx-1 flex max-w-full gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Cena de fundo">
             <ScenePill active={!p.pinned} onClick={() => p.onPin(null)}>
               Automático
             </ScenePill>
@@ -124,65 +106,85 @@ export default function Home(p: Props) {
             ))}
           </div>
 
-          <div>
-            <p className="glow-text text-sm text-white/80">
-              {now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-              {p.weather && p.location ? ` · ${p.location.name} · ${Math.round(p.weather.current.temp)}° ${p.weather.current.label.toLowerCase()}` : ''}
-            </p>
-            <p className="glow-text mt-1 text-7xl font-light tabular-nums leading-none sm:text-8xl">
-              {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-            </p>
-            <h2 className="glow-text mt-3 text-2xl font-medium sm:text-3xl">
-              {greeting(now.getHours())}, {first}.
-            </h2>
-            <p className="mt-1 flex items-center gap-2 text-sm text-white/75">
-              <span className={`size-2 rounded-full ${p.online ? 'bg-emerald-400' : 'bg-red-400'}`} />
-              {p.online ? 'Ayran online e pronto.' : 'Ayran offline. Verifique o servidor.'}
-            </p>
+          <button
+            onClick={() => document.getElementById('clima')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            className="glass-pill flex items-center gap-2.5 rounded-full py-2 pl-3 pr-4 text-sm transition hover:bg-white/10"
+          >
+            {p.weather && p.location ? (
+              <>
+                <NowIcon weather={p.weather} />
+                <span className="tabular-nums">{Math.round(p.weather.current.temp)}°C</span>
+                <span className="text-dim">
+                  {p.weather.current.label} · {p.location.name}
+                </span>
+              </>
+            ) : (
+              <>
+                <MapPin className="size-4" /> Escolher cidade
+              </>
+            )}
+          </button>
+        </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (ask.trim()) p.onAsk(ask.trim())
-              }}
-              className="mt-5 flex items-center gap-2 rounded-full border border-white/20 bg-black/35 p-1.5 backdrop-blur-xl focus-within:border-white/50"
-            >
-              <input
-                value={ask}
-                onChange={(e) => setAsk(e.target.value)}
-                placeholder="Pergunte ao Ayran…"
-                aria-label="Pergunte ao Ayran"
-                name="pergunta"
-                autoComplete="off"
-                enterKeyHint="send"
-                className="min-w-0 flex-1 bg-transparent px-4 py-2 outline-none placeholder:text-white/55"
-              />
-              <button className="grid size-10 place-items-center rounded-full bg-white text-void transition hover:bg-white/90" aria-label="Enviar">
-                <Send className="size-4" />
+        <div className="max-w-2xl">
+          <p className="glow-text text-sm text-white/85">
+            {now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+          <p className="glow-text mt-1 text-7xl font-light tabular-nums leading-none sm:text-[8.5rem]">
+            {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+          <h2 className="glow-text mt-4 text-2xl font-medium sm:text-4xl">
+            {greeting(now.getHours())}, {first}.
+          </h2>
+          <p className="glow-text mt-1.5 flex items-center gap-2 text-sm text-white/80">
+            <span className={`size-2 rounded-full ${p.online ? 'bg-emerald-400' : 'bg-red-400'}`} />
+            {p.online ? 'Ayran online e pronto.' : 'Ayran offline. Verifique o servidor.'}
+          </p>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (ask.trim()) p.onAsk(ask.trim())
+            }}
+            className="glass-pill mt-6 flex items-center gap-2 rounded-full p-1.5 focus-within:border-white/50"
+          >
+            <input
+              value={ask}
+              onChange={(e) => setAsk(e.target.value)}
+              placeholder="Pergunte ao Ayran…"
+              aria-label="Pergunte ao Ayran"
+              name="pergunta"
+              autoComplete="off"
+              enterKeyHint="send"
+              className="min-w-0 flex-1 bg-transparent px-4 py-2 outline-none placeholder:text-white/60"
+            />
+            <button className="grid size-10 place-items-center rounded-full bg-white text-void transition hover:bg-white/90" aria-label="Enviar">
+              <Send className="size-4" />
+            </button>
+          </form>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {QUICK.map((q) => (
+              <button
+                key={q}
+                onClick={() => p.onAsk(q)}
+                className="glass-pill rounded-full px-3.5 py-1.5 text-xs text-white/90 transition hover:bg-white/10"
+              >
+                {q}
               </button>
-            </form>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {QUICK.map((q) => (
-                <button
-                  key={q}
-                  onClick={() => p.onAsk(q)}
-                  className="rounded-full border border-white/20 bg-black/25 px-3.5 py-1.5 text-xs text-white/85 backdrop-blur transition hover:bg-black/45"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
+      <div className="grid gap-4 lg:grid-cols-12">
       {/* ---------- clima + previsao ---------- */}
-      <section className="glass order-2 rounded-[28px] p-5 lg:col-span-4 lg:row-span-2">
+      <section id="clima" className="glass order-2 scroll-mt-2 rounded-[28px] p-5 lg:col-span-4 lg:row-span-2">
         {!p.location || editingCity ? (
           <div>
             <h2 className="mb-1 text-lg font-medium">{p.location ? 'Trocar cidade' : 'Onde você está?'}</h2>
             <p className="mb-4 text-sm text-dim">O Ayran usa a cidade para mostrar o clima e trocar o cenário do painel.</p>
             <LocationPicker
+              autoFocus={editingCity}
               onAuthError={p.onAuthError}
               onClose={p.location ? () => setEditingCity(false) : undefined}
               onPick={(l) => {
@@ -289,6 +291,7 @@ export default function Home(p: Props) {
           </ul>
         )}
       </section>
+      </div>
     </div>
   )
 }
@@ -441,4 +444,9 @@ function ActivityChart({ week }: { week: Day[] }) {
       {total === 0 && <p className="mt-3 text-center text-xs text-dim">Suas conversas com o Ayran aparecem aqui.</p>}
     </div>
   )
+}
+
+function NowIcon({ weather }: { weather: Weather }) {
+  const Icon = weatherIcon(weather.current.code, weather.current.is_day)
+  return <Icon className="size-5" />
 }
