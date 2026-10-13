@@ -13,30 +13,11 @@ import aiohttp
 from pydantic import BaseModel, Field
 
 PERSONA = (
-    "Voce e o Ayran, assistente de IA da VZ Tecnologia, uma software house dirigida pelo Gabriel Vanzella (o dono). "
+    "Voce e o Ayran, assistente de IA do Gabriel e da software house dele. "
     "Fale em portugues do Brasil (a menos que pecam outro idioma), de forma direta, clara e amigavel, "
     "no masculino. Voce ajuda principalmente com desenvolvimento de software, gestao da empresa e "
     "comunicacao. Quando nao souber algo, diga que nao sabe em vez de inventar."
 )
-
-
-def who_is_talking(user: Optional[dict], owner_email: str) -> str:
-    """Diz ao modelo QUEM esta falando: a equipe inteira usa o Ayran, cada um com a propria conta."""
-    user = user or {}
-    name = (user.get("name") or "").strip() or "um usuario"
-    email = (user.get("email") or "").strip().lower()
-    if email and email == owner_email.strip().lower():
-        who = f"{name}, o dono da VZ Tecnologia"
-    elif user.get("role") == "admin":
-        who = f"{name}, da equipe da VZ Tecnologia (com acesso de administrador)"
-    else:
-        who = f"{name}, da equipe da VZ Tecnologia"
-    return (
-        "A VZ Tecnologia tem uma equipe e varias pessoas usam voce, cada uma com a propria conta. "
-        f"QUEM ESTA FALANDO AGORA: {who}. Nao presuma que e o Gabriel: trate a pessoa pelo nome dela "
-        f"({name.split()[0]}) quando fizer sentido. Nunca conte a uma pessoa o que outra conversou com voce "
-        "nem revele dados pessoais de outros usuarios."
-    )
 
 ROUTER_PROMPT = (
     "Classifique o pedido do usuario em UMA categoria e responda somente com a palavra:\n"
@@ -64,7 +45,6 @@ class Pipe:
             description="Dolphin 3.0 Mistral 24B (uso manual exclusivo do admin)",
         )
         ROUTER_MODEL: str = Field(default="qwen3.5:4b", description="Modelo que classifica o pedido")
-        OWNER_EMAIL: str = Field(default="gabrielvanzella1@hotmail.com", description="E-mail do dono da empresa")
         NUM_CTX: int = Field(default=8192)
         SHOW_ROUTE: bool = Field(default=True, description="Mostra qual especialista respondeu")
 
@@ -134,12 +114,8 @@ class Pipe:
         self, body: dict, __event_emitter__=None, __task__: Optional[str] = None, __user__: Optional[dict] = None
     ) -> AsyncGenerator[str, None] | str:
         messages = self._to_ollama_messages(body.get("messages", []))
-        # Personalidade + quem esta falando entram sempre; se o Open WebUI ja mandou um system prompt, soma
-        persona = PERSONA + " " + who_is_talking(__user__, self.valves.OWNER_EMAIL)
-        if messages and messages[0]["role"] == "system":
-            messages[0]["content"] = f"{persona}\n\n{messages[0]['content']}"
-        else:
-            messages.insert(0, {"role": "system", "content": persona})
+        if not any(m["role"] == "system" for m in messages):
+            messages.insert(0, {"role": "system", "content": PERSONA})
 
         requested_dolphin = False
         if not __task__:
