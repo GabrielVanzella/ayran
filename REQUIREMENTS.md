@@ -290,3 +290,7 @@ Itens originais da fase:
 - [x] Notebook-servidor **não dorme mais na bateria** (antes dormia em 3 min; ficou em espera de 13h36 às 15h22 e derrubou o túnel). Tampa fechada = não faz nada, na tomada e na bateria
 - [ ] Douglas foi criado como **Administrador**: admin vê a aba Equipe (cria/remove acessos), usa o modo `/dolphin` e pode ler conversas de todos. Rebaixar para Funcionário se não for a intenção
 - [ ] A criação de acesso pela aba Equipe deve deixar **Funcionário** como padrão visível e pedir confirmação ao escolher Administrador
+- [x] **Modelos de imagem e tamanho personalizado** (pedido em 2026-10-13): 10 modelos prontos (Instagram 1080², retrato 4:5, Story/Reels 1080×1920, miniatura YouTube, LinkedIn/Facebook, X, Pinterest, logo/avatar, banner de site, papel de parede) + tamanho livre de 256 a 2048 px (até ~4 MP, proporção até 4:1). O Ayran gera na proporção certa (SD 1.5, até 768 px) e amplia com Real-ESRGAN até o tamanho exato, cortando no centro se preciso. Cada modelo soma ao prompt uma dica de composição (espaço livre pra texto etc.) — `TEMPLATES` em `hub/backend/media.py`
+  - Limite honesto: **o gerador não escreve texto bem**; o texto do post entra depois (Canva etc.)
+  - No notebook de 4 GB: ~1 min nos tamanhos rápidos, ~2–3 min nos de 1080+, vários minutos em 2048²
+  - [ ] Salvar modelos próprios da VZ (identidade visual: cores, estilo) como padrões da equipe

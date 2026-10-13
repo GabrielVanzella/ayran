@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Clapperboard, Download, ImageIcon, ImagePlus, Loader2, Lock, Sparkles, Trash2, Wand2, X } from 'lucide-react'
+import SizePicker, { customError, estimate, type SizeChoice } from './SizePicker'
 import {
   AuthError,
   createImage,
@@ -12,7 +13,6 @@ import {
   type MediaJob,
 } from '../lib/api'
 
-const SIZE_LABELS: Record<string, string> = { quadrado: 'Quadrado', retrato: 'Retrato', paisagem: 'Paisagem' }
 const STYLE_LABELS: Record<string, string> = {
   livre: 'Livre',
   foto: 'Foto realista',
@@ -48,7 +48,7 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
   const [caps, setCaps] = useState<MediaCapabilities | null>(null)
   const [jobs, setJobs] = useState<MediaJob[]>([])
   const [prompt, setPrompt] = useState('')
-  const [size, setSize] = useState('quadrado')
+  const [sizeChoice, setSizeChoice] = useState<SizeChoice>({ type: 'quick', id: 'quadrado' })
   const [style, setStyle] = useState('livre')
   const [enhance, setEnhance] = useState(true)
   const [error, setError] = useState('')
@@ -125,7 +125,10 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
         form.append('image', await shrink(ref.file), 'referencia.jpg')
         await createImageFromRef(form)
       } else {
-        await createImage({ prompt: prompt.trim(), size, style, enhance })
+        const base = { prompt: prompt.trim(), style, enhance }
+        if (sizeChoice.type === 'template') await createImage({ ...base, template: sizeChoice.id })
+        else if (sizeChoice.type === 'custom') await createImage({ ...base, width: Number(sizeChoice.w), height: Number(sizeChoice.h) })
+        else await createImage({ ...base, size: sizeChoice.id })
       }
       await refresh()
     } catch (err) {
@@ -238,8 +241,8 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
                 onChange={(e) => pickFile(e.target.files?.[0])}
               />
             </div>
+            {!ref && <SizePicker caps={caps} value={sizeChoice} onChange={setSizeChoice} />}
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              {!ref && <Chips label="Formato" options={caps?.sizes ?? ['quadrado']} labels={SIZE_LABELS} value={size} onChange={setSize} />}
               <Chips label="Estilo" options={caps?.styles ?? ['livre']} labels={STYLE_LABELS} value={style} onChange={setStyle} />
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -248,7 +251,7 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
                 <Wand2 className="size-4" /> Ayran melhora o prompt (traduz pro inglês e detalha)
               </label>
               <button
-                disabled={sending || !prompt.trim() || !caps?.image}
+                disabled={sending || !prompt.trim() || !caps?.image || (!ref && sizeChoice.type === 'custom' && !!customError(sizeChoice.w, sizeChoice.h, caps))}
                 className="ml-auto flex items-center gap-2 rounded-full bg-neon px-5 py-2.5 font-semibold text-void transition hover:bg-neon-soft disabled:opacity-40"
               >
                 {sending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
@@ -264,7 +267,7 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
             {error && <p role="alert" className="rounded-2xl bg-red-500/10 px-4 py-2.5 text-sm text-red-300">{error}</p>}
             <p className="text-xs text-dim">
               Neste notebook (GPU de 4 GB) cada imagem leva de ~30s a alguns minutos. Uma por vez — os pedidos entram na
-              fila.
+              fila. {!ref && <>Este tamanho leva {estimate(sizeChoice, caps)}.</>}
               {ref && ' Com imagem de referência o gerador não aceita nudez nem conteúdo sexual, e a imagem enviada não fica guardada.'}
             </p>
           </form>
@@ -398,6 +401,7 @@ function JobCard({ job, onOpen, onDelete }: { job: MediaJob; onOpen: () => void;
 
 function Viewer({ job, onClose }: { job: MediaJob; onClose: () => void }) {
   const url = useMediaBlob(job)
+  const [dims, setDims] = useState<string>('')
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={onClose}>
       <div className="glass max-h-full w-full max-w-3xl overflow-y-auto rounded-[28px] p-4" onClick={(e) => e.stopPropagation()}>
@@ -406,7 +410,7 @@ function Viewer({ job, onClose }: { job: MediaJob; onClose: () => void }) {
           {url && (
             <a
               href={url}
-              download={`ayran-${job.id.slice(0, 8)}.png`}
+              download={`ayran-${dims ? dims.replace(' × ', 'x') + '-' : ''}${job.id.slice(0, 8)}.png`}
               className="flex items-center gap-1 rounded-full bg-neon px-3 py-1.5 text-sm font-semibold text-void"
             >
               <Download className="size-4" /> Baixar
@@ -416,7 +420,15 @@ function Viewer({ job, onClose }: { job: MediaJob; onClose: () => void }) {
             <X className="size-5" />
           </button>
         </div>
-        {url && <img src={url} alt={job.prompt} className="mx-auto max-h-[70vh] rounded-xl" />}
+        {url && (
+          <img
+            src={url}
+            alt={job.prompt}
+            onLoad={(e) => setDims(`${e.currentTarget.naturalWidth} × ${e.currentTarget.naturalHeight}`)}
+            className="mx-auto max-h-[70vh] rounded-2xl"
+          />
+        )}
+        {dims && <p className="mt-2 text-center text-xs tabular-nums text-dim">{dims} px</p>}
         {job.final_prompt && (
           <p className="mt-3 text-xs text-dim">
             <span className="text-neon-soft">Prompt usado:</span> {job.final_prompt}

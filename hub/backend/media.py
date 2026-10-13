@@ -22,6 +22,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
 import safety
+import comfy
 from comfy import GPU_LOCK
 
 COMFY_URL = "http://127.0.0.1:8188"
@@ -61,6 +62,72 @@ REF_MAX_SIDE = 768
 REF_MIN_SIDE = 256
 
 SIZES = {"quadrado": (512, 512), "retrato": (512, 768), "paisagem": (768, 512)}
+
+# Modelos prontos: tamanho final + dica de composicao (o texto da dica entra no prompt, ja em ingles).
+# O gerador nao escreve texto bem: por isso os modelos de post deixam espaco livre pra colocar o texto depois.
+TEMPLATES = {
+    "instagram_post": {"label": "Post do Instagram", "group": "Redes sociais", "w": 1080, "h": 1080,
+                       "hint": "Quadrado 1:1", "suffix": "square composition, centered subject, clean uncluttered background, empty space for text"},
+    "instagram_retrato": {"label": "Post retrato (4:5)", "group": "Redes sociais", "w": 1080, "h": 1350,
+                          "hint": "Instagram e Facebook, ocupa mais a tela", "suffix": "vertical composition, subject in the center, empty space at the top for text"},
+    "story": {"label": "Story / Reels", "group": "Redes sociais", "w": 1080, "h": 1920,
+              "hint": "Tela cheia 9:16", "suffix": "tall vertical composition, subject in the middle, empty space at the top and bottom for text"},
+    "youtube": {"label": "Miniatura do YouTube", "group": "Redes sociais", "w": 1280, "h": 720,
+                "hint": "16:9", "suffix": "dramatic lighting, bold vivid colors, subject on the right side, empty space on the left for a title"},
+    "linkedin": {"label": "Post LinkedIn / Facebook", "group": "Redes sociais", "w": 1200, "h": 630,
+                 "hint": "Horizontal 1,91:1", "suffix": "wide horizontal composition, professional clean look, empty space on one side for text"},
+    "x_post": {"label": "Post do X (Twitter)", "group": "Redes sociais", "w": 1600, "h": 900,
+               "hint": "16:9", "suffix": "wide composition, clear focal point, uncluttered"},
+    "pinterest": {"label": "Pin do Pinterest", "group": "Redes sociais", "w": 1000, "h": 1500,
+                  "hint": "Vertical 2:3", "suffix": "tall vertical composition, aesthetic, empty space at the bottom for text"},
+    "logo": {"label": "Logo / avatar", "group": "Marca e site", "w": 1024, "h": 1024,
+             "hint": "Quadrado, fundo liso", "suffix": "minimalist emblem, flat vector style, simple shapes, centered, plain solid background"},
+    "banner": {"label": "Banner de site", "group": "Marca e site", "w": 1920, "h": 640,
+               "hint": "Panorâmico 3:1", "suffix": "wide panoramic banner composition, subject on one side, empty space on the other"},
+    "wallpaper": {"label": "Papel de parede", "group": "Marca e site", "w": 1920, "h": 1080,
+                  "hint": "Tela cheia 16:9", "suffix": "wide cinematic wallpaper, highly detailed, rich atmosphere"},
+}
+CUSTOM_MIN, CUSTOM_MAX, CUSTOM_MAX_PIXELS, CUSTOM_MAX_RATIO = 256, 2048, 4_200_000, 4.0
+GEN_MAX_SIDE, GEN_MAX_PIXELS, GEN_MIN_SIDE = 768, 480_000, 256  # o que a placa de 4 GB gera de uma vez
+
+
+def fit_generation(w: int, h: int) -> tuple[int, int]:
+    """Resolucao em que o SD 1.5 gera (multiplos de 8) mantendo a proporcao do tamanho final."""
+    ratio = w / h
+    gw, gh = (GEN_MAX_SIDE, GEN_MAX_SIDE / ratio) if ratio >= 1 else (GEN_MAX_SIDE * ratio, GEN_MAX_SIDE)
+    if gw * gh > GEN_MAX_PIXELS:
+        k = (GEN_MAX_PIXELS / (gw * gh)) ** 0.5
+        gw, gh = gw * k, gh * k
+    return max(GEN_MIN_SIDE, round(gw / 8) * 8), max(GEN_MIN_SIDE, round(gh / 8) * 8)
+
+
+def resolve_target(params: dict) -> tuple[int, int, str] | None:
+    """Tamanho final pedido (modelo pronto ou personalizado) e a dica de composicao; None = tamanho rapido antigo."""
+    t = TEMPLATES.get(params.get("template") or "")
+    if t:
+        return t["w"], t["h"], t["suffix"]
+    if params.get("width") and params.get("height"):
+        return int(params["width"]), int(params["height"]), ""
+    return None
+
+
+async def finish_size(client: httpx.AsyncClient, data: bytes, w: int, h: int, gen: tuple[int, int]) -> bytes:
+    """Aumenta a resolucao (Real-ESRGAN) se o alvo e maior que o gerado e ajusta pro tamanho exato (corte central)."""
+    if w > gen[0] or h > gen[1]:
+        data = await comfy.upscale(client, data)
+    img = Image.open(io.BytesIO(data)).convert("RGB")
+    target_ratio, ratio = w / h, img.width / img.height
+    if ratio > target_ratio:  # larga demais: corta dos lados
+        nw = round(img.height * target_ratio)
+        left = (img.width - nw) // 2
+        box = (left, 0, left + nw, img.height)
+    else:  # alta demais: corta em cima e embaixo
+        nh = round(img.width / target_ratio)
+        top = (img.height - nh) // 2
+        box = (0, top, img.width, top + nh)
+    out = io.BytesIO()
+    img.crop(box).resize((w, h), Image.LANCZOS).save(out, "PNG", optimize=True)
+    return out.getvalue()
 STYLES = {
     "livre": "",
     "foto": "photorealistic, 35mm photo, natural light, highly detailed, sharp focus",
@@ -85,6 +152,9 @@ TRANSLATE_SYSTEM = (
 class ImageRequest(BaseModel):
     prompt: str = Field(min_length=2, max_length=1000)
     size: str = "quadrado"
+    template: str | None = None  # modelo pronto (TEMPLATES): define tamanho final e composicao
+    width: int | None = Field(default=None, ge=CUSTOM_MIN, le=CUSTOM_MAX)  # tamanho personalizado
+    height: int | None = Field(default=None, ge=CUSTOM_MIN, le=CUSTOM_MAX)
     style: str = "livre"
     steps: int = Field(default=25, ge=10, le=40)
     seed: int | None = None
@@ -176,10 +246,18 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
             raise ValueError(REF_BLOCKED_MESSAGE)
         style = STYLES.get(params.get("style", "livre"), "")
         final = f"{final}, {style}" if style else final
+        target = None if ref else resolve_target(params)
+        if target and target[2]:
+            final = f"{final}, {target[2]}"
         set_job(job["id"], final_prompt=final, error="liberando a GPU…")
         await free_ollama_gpu(client)
 
-        width, height = (params["width"], params["height"]) if ref else SIZES.get(params.get("size"), SIZES["quadrado"])
+        if ref:
+            width, height = params["width"], params["height"]
+        elif target:
+            width, height = fit_generation(target[0], target[1])
+        else:
+            width, height = SIZES.get(params.get("size"), SIZES["quadrado"])
         values = {
             "seed": params.get("seed") or random.randint(1, 2**31),
             "steps": params.get("steps", 25),
@@ -237,6 +315,11 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
                     name = f"{job['id']}_{i}.png"
                     (media_dir / name).write_bytes(data)
                     files.append(name)
+                if target:  # modelo pronto / personalizado: ajusta pro tamanho exato pedido
+                    set_job(job["id"], error=f"ajustando para {target[0]}×{target[1]}…")
+                    for f in files:
+                        path = media_dir / f
+                        path.write_bytes(await finish_size(client, path.read_bytes(), target[0], target[1], (width, height)))
                 if ref:  # a imagem gerada tambem passa pela verificacao antes de aparecer
                     set_job(job["id"], error="verificando a imagem gerada…")
                     try:
@@ -289,6 +372,9 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
             "video": vram >= VIDEO_MIN_VRAM_GB,
             "video_min_vram_gb": VIDEO_MIN_VRAM_GB,
             "sizes": list(SIZES),
+            "templates": [{"id": k, "label": v["label"], "group": v["group"], "width": v["w"], "height": v["h"],
+                           "hint": v["hint"]} for k, v in TEMPLATES.items()],
+            "custom": {"min": CUSTOM_MIN, "max": CUSTOM_MAX, "max_ratio": CUSTOM_MAX_RATIO},
             "styles": list(STYLES),
             "lora": LORA,
             "lora_model": LORA_STRENGTH_MODEL,
@@ -299,6 +385,15 @@ def build_router(db, current_user, media_dir: Path) -> APIRouter:
     async def create_image(req: ImageRequest, user=Depends(current_user)):
         if _BLOCK_MINORS.search(req.prompt):
             raise HTTPException(400, "Não gero conteúdo envolvendo menores de idade.")
+        if req.template and req.template not in TEMPLATES:
+            raise HTTPException(400, "Modelo desconhecido.")
+        if (req.width is None) != (req.height is None):
+            raise HTTPException(400, "Informe a largura e a altura.")
+        if req.width and req.height:
+            if req.width * req.height > CUSTOM_MAX_PIXELS:
+                raise HTTPException(400, "Esse tamanho é grande demais (máximo ~4 megapixels).")
+            if max(req.width / req.height, req.height / req.width) > CUSTOM_MAX_RATIO:
+                raise HTTPException(400, "Proporção extrema demais (máximo 4:1).")
         job_id = uuid.uuid4().hex
         with db() as conn:
             conn.execute(

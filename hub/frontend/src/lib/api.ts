@@ -223,6 +223,8 @@ export type MediaCapabilities = {
   video: boolean
   video_min_vram_gb: number
   sizes: string[]
+  templates: { id: string; label: string; group: string; width: number; height: number; hint: string }[]
+  custom: { min: number; max: number; max_ratio: number }
   styles: string[]
   lora: string
   lora_model: number
@@ -244,7 +246,10 @@ export const getMediaCapabilities = () => request<MediaCapabilities>('/api/media
 export const listMedia = () => request<MediaJob[]>('/api/media')
 export const createImage = (body: {
   prompt: string
-  size: string
+  size?: string
+  template?: string
+  width?: number
+  height?: number
   style: string
   enhance: boolean
   checkpoint?: string | null
