@@ -21,7 +21,7 @@ from pathlib import Path
 import feedparser
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
@@ -74,6 +74,20 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Central do Ayran", lifespan=lifespan, docs_url=None, redoc_url=None)
+
+# Publicada em vztecnologia.com.br/ayran: o Worker do Cloudflare repassa o caminho inteiro.
+# O prefixo e removido aqui, entao o resto do app continua com rotas na raiz (/api, /owui, ...).
+BASE_PATH = os.environ.get("AYRAN_BASE_PATH", "/ayran")
+
+
+@app.middleware("http")
+async def strip_base_path(request: Request, call_next):
+    path = request.scope["path"]
+    if path == "/" or path == BASE_PATH:
+        return RedirectResponse(f"{BASE_PATH}/")
+    if path.startswith(BASE_PATH + "/"):
+        request.scope["path"] = path[len(BASE_PATH):]
+    return await call_next(request)
 
 
 # ---------------- autenticacao (via Open WebUI) ----------------

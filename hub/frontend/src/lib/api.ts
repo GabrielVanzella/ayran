@@ -1,5 +1,8 @@
 // Cliente da central: login/chat/historico via Open WebUI (/owui), resto via backend (/api).
 
+// Prefixo onde a central esta publicada (ex: /ayran). Vem do `base` do vite.config.
+export const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+
 const TOKEN_KEY = 'ayran.token'
 
 export type User = { id: string; name: string; email: string; role: string; profile_image_url?: string }
@@ -40,7 +43,7 @@ export class AuthError extends Error {}
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken()
-  const res = await fetch(path, {
+  const res = await fetch(BASE + path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -59,7 +62,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 // ---------- conta ----------
 
 export async function signin(email: string, password: string): Promise<User> {
-  const res = await fetch('/owui/api/v1/auths/signin', {
+  const res = await fetch(BASE + '/owui/api/v1/auths/signin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
@@ -79,7 +82,7 @@ export const me = () => request<User>('/owui/api/v1/auths/')
 /** Neste PC (servidor) o backend entra sozinho como admin; de fora retorna null. */
 export async function autoLogin(): Promise<User | null> {
   try {
-    const res = await fetch('/api/auto-login', { method: 'POST' })
+    const res = await fetch(BASE + '/api/auto-login', { method: 'POST' })
     if (!res.ok) return null
     const data = await res.json()
     setToken(data.token)
@@ -97,7 +100,7 @@ export async function streamChat(
   onDelta: (full: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
-  const res = await fetch('/owui/api/chat/completions', {
+  const res = await fetch(BASE + '/owui/api/chat/completions', {
     method: 'POST',
     signal,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
@@ -250,14 +253,14 @@ export const createImage = (body: {
 export const deleteMedia = (id: string) => request(`/api/media/${id}`, { method: 'DELETE' })
 
 export async function mediaFileUrl(id: string, n: number): Promise<string> {
-  const res = await fetch(`/api/media/${id}/file/${n}`, { headers: { Authorization: `Bearer ${getToken()}` } })
+  const res = await fetch(BASE + `/api/media/${id}/file/${n}`, { headers: { Authorization: `Bearer ${getToken()}` } })
   if (!res.ok) throw new Error('Imagem indisponível')
   return URL.createObjectURL(await res.blob())
 }
 
 export async function health(): Promise<boolean> {
   try {
-    return (await fetch('/owui/health')).ok
+    return (await fetch(BASE + '/owui/health')).ok
   } catch {
     return false
   }

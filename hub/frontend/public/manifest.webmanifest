@@ -1,9 +1,10 @@
 {
   "name": "Ayran — Central",
   "short_name": "Ayran",
-  "start_url": "/",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#05070d",
   "theme_color": "#05070d",
-  "icons": [{ "src": "/ayran.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "icons": [{ "src": "ayran.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
 }
