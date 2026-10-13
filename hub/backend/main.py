@@ -29,6 +29,7 @@ from starlette.background import BackgroundTask
 from feeds import TOPICS
 from media import build_router as build_media_router, init_media_db
 from system import build_router as build_system_router
+from team import build_router as build_team_router
 from weather import build_router as build_weather_router
 
 OWUI_URL = os.environ.get("OWUI_URL", "http://127.0.0.1:8080")
@@ -176,6 +177,13 @@ media_router = build_media_router(db, current_user, AYRAN_HOME / "hub" / "media"
 app.include_router(media_router)
 app.include_router(build_weather_router(current_user))
 app.include_router(build_system_router(current_user))
+def forget_user(user_id: str):
+    for token, (_, u) in list(_auth_cache.items()):
+        if u.get("id") == user_id:
+            _auth_cache.pop(token, None)
+
+
+app.include_router(build_team_router(current_user, forget_user))
 
 
 # ---------------- login automatico (so no proprio servidor) ----------------

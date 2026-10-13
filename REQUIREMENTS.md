@@ -135,6 +135,8 @@ O Ayran ajuda o Gabriel na **vida pessoal e no trabalho**, e vai **cuidar da VZ 
 - Papéis: **admin** (Gabriel) vê tudo e usa modos exclusivos (`/dolphin`); **funcionário** usa chat, código, imagem e a base da empresa, sem acesso ao pessoal do dono
 - **Funcionários têm acesso a tudo que o Gabriel tem, exceto algumas coisas** (as exceções serão informadas por ele durante o desenvolvimento). Por isso as permissões devem ser **configuráveis por recurso e por papel** num lugar só (uma tabela de recursos × papéis), pra liberar/bloquear sem mexer em código
 - [ ] Tabela de permissões por recurso (chat, código, imagem, vídeo, modo criativo, base da empresa, API/gateway, painel avançado…) × papel; começa tudo liberado, exceto o espaço pessoal do dono
+- [x] **Criação de acessos pelo dono** (2026-10-13): aba **Equipe** (só admin) — criar funcionário (senha provisória gerada + mensagem pronta pro WhatsApp, mostrada uma vez), gerar nova senha, promover/rebaixar, remover. Cadastro aberto já está desligado: ninguém se cadastra sozinho. Backend `hub/backend/team.py`
+- [ ] **Redis** (limitação do Open WebUI): sem ele, trocar a senha **não derruba sessões já abertas** (valem até 4 semanas, `JWT_EXPIRES_IN`). "Remover acesso" corta na hora. Ao migrar pro PC novo, instalar Redis (ou reduzir a validade da sessão pra 7 dias)
 - Já é por usuário hoje: conversas (Open WebUI), ideias, preferências (cidade, playlist, cena), galeria de imagens
 - [ ] Base de conhecimento da empresa (RAG) separada da pessoal, com permissão por grupo/projeto
 - [ ] Decidir e avisar a equipe: o admin do Open WebUI pode ler as conversas dos usuários (`ENABLE_ADMIN_CHAT_ACCESS`); desligar se a política for privacidade total

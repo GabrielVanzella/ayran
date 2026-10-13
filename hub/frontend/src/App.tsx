@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Home as HomeIcon, Lightbulb, LogOut, MessageSquare, Music2, Newspaper, Palette, Search, Settings2 } from 'lucide-react'
+import { Home as HomeIcon, Lightbulb, LogOut, MessageSquare, Music2, Newspaper, Palette, Search, Settings2, Users } from 'lucide-react'
+import Team from './components/Team'
 import Create from './components/Create'
 import Login from './components/Login'
 import Home from './components/Home'
@@ -28,15 +29,16 @@ import {
 } from './lib/api'
 import { loadPinnedScene, savePinnedScene, sceneByClock, sceneFromUrl } from './lib/weather'
 
-export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'music'
+export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'music' | 'team'
 
-const NAV: { id: Tab; label: string; icon: typeof HomeIcon }[] = [
+const NAV: { id: Tab; label: string; icon: typeof HomeIcon; adminOnly?: boolean }[] = [
   { id: 'home', label: 'Início', icon: HomeIcon },
   { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'create', label: 'Criar', icon: Palette },
   { id: 'news', label: 'Notícias', icon: Newspaper },
   { id: 'ideas', label: 'Ideias', icon: Lightbulb },
   { id: 'music', label: 'Música', icon: Music2 },
+  { id: 'team', label: 'Equipe', icon: Users, adminOnly: true },
 ]
 
 const TITLES: Record<Tab, string> = {
@@ -46,6 +48,7 @@ const TITLES: Record<Tab, string> = {
   news: 'Notícias',
   ideas: 'Ideias',
   music: 'Música',
+  team: 'Equipe',
 }
 
 // O painel avancado (Open WebUI) so e alcancavel no proprio servidor, nunca pelo dominio publico.
@@ -168,6 +171,8 @@ export default function App() {
   }
 
   const initial = user.name.trim().charAt(0).toUpperCase() || 'A'
+  const isAdmin = user.role === 'admin'
+  const nav = NAV.filter((n) => !n.adminOnly || isAdmin)
 
   return (
     <div data-scene={scene} className="relative h-full overflow-hidden">
@@ -215,7 +220,7 @@ export default function App() {
             {/* navegacao lateral em capsula (desktop) */}
             <nav className="hidden shrink-0 flex-col items-center justify-between py-1 md:flex" aria-label="Navegação">
               <div className="glass-pill flex flex-col gap-2 rounded-full p-2">
-                {NAV.map(({ id, label, icon: Icon }) => (
+                {nav.map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
                     onClick={() => setTab(id)}
@@ -280,6 +285,7 @@ export default function App() {
               {tab === 'news' && <News onAuthError={logout} />}
               {tab === 'ideas' && <Ideas onAuthError={logout} onDevelop={ask} />}
               {tab === 'music' && settings && <Music current={settings.spotify} onChange={changeMusic} />}
+              {tab === 'team' && isAdmin && <Team onAuthError={logout} />}
             </main>
           </div>
 
@@ -293,7 +299,7 @@ export default function App() {
 
           {/* navegacao inferior (celular) */}
           <nav className="flex border-t border-white/10 pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Navegação">
-            {NAV.map(({ id, label, icon: Icon }) => (
+            {nav.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}

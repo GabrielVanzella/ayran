@@ -259,6 +259,24 @@ export async function mediaFileUrl(id: string, n: number): Promise<string> {
   return URL.createObjectURL(await res.blob())
 }
 
+// ---------- equipe (so admin) ----------
+
+export type TeamUser = { id: string; name: string; email: string; role: 'admin' | 'user' | 'pending'; online: boolean; me: boolean }
+
+export const listTeam = () => request<TeamUser[]>('/api/team/users')
+export const createTeamUser = (u: { name: string; email: string; password: string; role: 'user' | 'admin' }) =>
+  request<{ id: string }>('/api/team/users', { method: 'POST', body: JSON.stringify(u) })
+export const updateTeamUser = (id: string, patch: { role?: 'user' | 'admin'; password?: string }) =>
+  request(`/api/team/users/${id}`, { method: 'PATCH', body: JSON.stringify(patch) })
+export const deleteTeamUser = (id: string) => request(`/api/team/users/${id}`, { method: 'DELETE' })
+
+/** Senha provisoria legivel (sem 0/O/1/l/I). */
+export function generatePassword(length = 12): string {
+  const alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'
+  const bytes = crypto.getRandomValues(new Uint32Array(length))
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('')
+}
+
 // ---------- clima / servidor ----------
 
 export type Scene = 'praia' | 'sol' | 'nublado' | 'chuva' | 'tempestade' | 'neblina' | 'noite' | 'frio'
