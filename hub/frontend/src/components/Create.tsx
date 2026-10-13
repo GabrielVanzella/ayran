@@ -255,7 +255,13 @@ export default function Create({ onAuthError }: { onAuthError: () => void }) {
                 {ref ? 'Gerar a partir da imagem' : 'Gerar imagem'}
               </button>
             </div>
-            {error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>}
+            {caps && !caps.image && (
+              <p role="status" className="rounded-2xl bg-white/10 px-4 py-2.5 text-sm">
+                O motor de imagem não está respondendo agora (ocupado ou reiniciando). Tente de novo em instantes; se
+                continuar, avise o administrador.
+              </p>
+            )}
+            {error && <p role="alert" className="rounded-2xl bg-red-500/10 px-4 py-2.5 text-sm text-red-300">{error}</p>}
             <p className="text-xs text-dim">
               Neste notebook (GPU de 4 GB) cada imagem leva de ~30s a alguns minutos. Uma por vez — os pedidos entram na
               fila.
