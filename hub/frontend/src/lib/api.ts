@@ -356,3 +356,22 @@ export const setCityInfo = (desc: string) =>
 // ---------- minha conta ----------
 export const changePassword = (current: string, next: string) =>
   request<{ ok: boolean }>('/api/account/password', { method: 'POST', body: JSON.stringify({ current, new: next }) })
+
+// ---------- tarefas ----------
+export type TaskStatus = 'pendente' | 'andamento' | 'concluida'
+export type Task = {
+  id: string
+  title: string
+  details: string
+  due_date: string | null
+  status: TaskStatus
+  created_at: number
+  updated_at: number
+  idea_id: string | null
+}
+export const listTasks = () => request<Task[]>('/api/tasks')
+export const createTask = (t: { title: string; details?: string; due_date?: string | null; idea_id?: string | null }) =>
+  request<Task>('/api/tasks', { method: 'POST', body: JSON.stringify(t) })
+export const updateTask = (id: string, patch: Partial<Pick<Task, 'title' | 'details' | 'due_date' | 'status'>>) =>
+  request<Task>(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(patch) })
+export const deleteTask = (id: string) => request(`/api/tasks/${id}`, { method: 'DELETE' })

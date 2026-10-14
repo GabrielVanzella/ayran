@@ -16,14 +16,16 @@ import time
 import uuid
 from calendar import timegm
 from contextlib import asynccontextmanager
+from datetime import date
 from pathlib import Path
+from typing import Literal
 
 import feedparser
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
 from feeds import TOPICS
@@ -63,9 +65,17 @@ def init_db():
             );
             create index if not exists ideas_user on ideas(user_id);
             create table if not exists settings (user_id text primary key, data text not null);
+            create table if not exists tasks (
+                id text primary key, user_id text not null, title text not null,
+                details text default '', due_date text, status text not null default 'pendente',
+                created_at integer, updated_at integer
+            );
+            create index if not exists tasks_user_due on tasks(user_id, due_date, created_at);
             """
         )
         init_media_db(conn)
+        if "idea_id" not in [r[1] for r in conn.execute("pragma table_info(tasks)")]:
+            conn.execute("alter table tasks add column idea_id text")  # tarefa criada a partir de uma ideia
 
 
 @asynccontextmanager
@@ -333,6 +343,93 @@ async def update_idea(idea_id: str, patch: IdeaPatch, user=Depends(current_user)
 async def delete_idea(idea_id: str, user=Depends(current_user)):
     with db() as conn:
         conn.execute("delete from ideas where id = ? and user_id = ?", (idea_id, user["id"]))
+    return {"ok": True}
+
+
+# ---------------- tarefas pessoais ----------------
+
+TaskStatus = Literal["pendente", "andamento", "concluida"]
+
+
+class TaskIn(BaseModel):
+    title: str = Field(min_length=1, max_length=160)
+    details: str = Field(default="", max_length=2000)
+    due_date: date | None = None
+    idea_id: str | None = Field(default=None, max_length=64)
+
+
+class TaskPatch(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=160)
+    details: str | None = Field(default=None, max_length=2000)
+    due_date: date | None = None
+    status: TaskStatus | None = None
+
+
+@app.get("/api/tasks")
+async def list_tasks(user=Depends(current_user)):
+    with db() as conn:
+        rows = conn.execute(
+            "select * from tasks where user_id = ? "
+            "order by case when status = 'concluida' then 1 else 0 end, "
+            "due_date is null, due_date, created_at desc",
+            (user["id"],),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+@app.post("/api/tasks")
+async def create_task(task: TaskIn, user=Depends(current_user)):
+    now = int(time.time())
+    row = {
+        "id": uuid.uuid4().hex,
+        "user_id": user["id"],
+        "title": task.title.strip(),
+        "details": task.details.strip(),
+        "due_date": task.due_date.isoformat() if task.due_date else None,
+        "status": "pendente",
+        "created_at": now,
+        "updated_at": now,
+        "idea_id": task.idea_id,
+    }
+    with db() as conn:
+        if task.idea_id:
+            if not conn.execute("select 1 from ideas where id = ? and user_id = ?", (task.idea_id, user["id"])).fetchone():
+                raise HTTPException(404, "Ideia não encontrada")
+            if conn.execute("select 1 from tasks where idea_id = ? and user_id = ?", (task.idea_id, user["id"])).fetchone():
+                raise HTTPException(409, "Essa ideia já virou tarefa")
+        conn.execute(
+            "insert into tasks (id, user_id, title, details, due_date, status, created_at, updated_at, idea_id) "
+            "values (:id, :user_id, :title, :details, :due_date, :status, :created_at, :updated_at, :idea_id)",
+            row,
+        )
+    return row
+
+
+@app.patch("/api/tasks/{task_id}")
+async def update_task(task_id: str, patch: TaskPatch, user=Depends(current_user)):
+    fields = patch.model_dump(exclude_unset=True)
+    if "due_date" in fields:
+        fields["due_date"] = fields["due_date"].isoformat() if fields["due_date"] else None
+    fields["updated_at"] = int(time.time())
+    sets = ", ".join(f"{key} = :{key}" for key in fields)
+    with db() as conn:
+        updated = conn.execute(
+            f"update tasks set {sets} where id = :id and user_id = :user_id",
+            {**fields, "id": task_id, "user_id": user["id"]},
+        ).rowcount
+        if not updated:
+            raise HTTPException(404, "Tarefa não encontrada")
+        return dict(conn.execute("select * from tasks where id = ?", (task_id,)).fetchone())
+
+
+@app.delete("/api/tasks/{task_id}")
+async def delete_task(task_id: str, user=Depends(current_user)):
+    with db() as conn:
+        deleted = conn.execute(
+            "delete from tasks where id = ? and user_id = ?", (task_id, user["id"])
+        ).rowcount
+        if not deleted:
+            raise HTTPException(404, "Tarefa não encontrada")
     return {"ok": True}
 
 

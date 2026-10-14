@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Home as HomeIcon, Lightbulb, LogOut, MessageSquare, Music2, Newspaper, Palette, Search, Settings2, Users } from 'lucide-react'
+import { Home as HomeIcon, Lightbulb, ListTodo, LogOut, MessageSquare, Music2, Newspaper, Palette, Search, Settings2, Users } from 'lucide-react'
 import Account from './components/Account'
+import Tasks from './components/Tasks'
 import Team from './components/Team'
 import Create from './components/Create'
 import Login from './components/Login'
@@ -33,7 +34,7 @@ import {
 } from './lib/api'
 import { loadPinnedScene, savePinnedScene, sceneByClock, sceneFromUrl } from './lib/weather'
 
-export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'music' | 'team'
+export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'tasks' | 'music' | 'team'
 
 const NAV: { id: Tab; label: string; icon: typeof HomeIcon; adminOnly?: boolean }[] = [
   { id: 'home', label: 'Início', icon: HomeIcon },
@@ -41,6 +42,7 @@ const NAV: { id: Tab; label: string; icon: typeof HomeIcon; adminOnly?: boolean 
   { id: 'create', label: 'Criar', icon: Palette },
   { id: 'news', label: 'Notícias', icon: Newspaper },
   { id: 'ideas', label: 'Ideias', icon: Lightbulb },
+  { id: 'tasks', label: 'Tarefas', icon: ListTodo },
   { id: 'music', label: 'Música', icon: Music2 },
   { id: 'team', label: 'Equipe', icon: Users, adminOnly: true },
 ]
@@ -51,6 +53,7 @@ const TITLES: Record<Tab, string> = {
   create: 'Criar',
   news: 'Notícias',
   ideas: 'Ideias',
+  tasks: 'Tarefas',
   music: 'Música',
   team: 'Equipe',
 }
@@ -363,7 +366,8 @@ export default function App() {
               </div>
               {tab === 'create' && <Create onAuthError={logout} />}
               {tab === 'news' && <News onAuthError={logout} />}
-              {tab === 'ideas' && <Ideas onAuthError={logout} onDevelop={ask} />}
+              {tab === 'ideas' && <Ideas onAuthError={logout} onDevelop={ask} onGo={setTab} />}
+              {tab === 'tasks' && <Tasks onAuthError={logout} />}
               {tab === 'music' && settings && <Music current={settings.spotify} onChange={changeMusic} />}
               {tab === 'team' && isAdmin && <Team onAuthError={logout} />}
             </main>

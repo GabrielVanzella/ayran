@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, Plus, Sparkles, Trash2 } from 'lucide-react'
-import { AuthError, createIdea, deleteIdea, listIdeas, updateIdea, type Idea } from '../lib/api'
+import { ArrowLeft, ArrowRight, Check, ListTodo, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { AuthError, createIdea, createTask, deleteIdea, listIdeas, listTasks, updateIdea, type Idea } from '../lib/api'
+import type { Tab } from '../App'
 
 const COLUMNS: { id: Idea['status']; label: string; accent: string }[] = [
   { id: 'nova', label: 'Novas', accent: 'bg-neon' },
@@ -8,10 +9,12 @@ const COLUMNS: { id: Idea['status']; label: string; accent: string }[] = [
   { id: 'feita', label: 'Feitas', accent: 'bg-emerald-400' },
 ]
 
-type Props = { onAuthError: () => void; onDevelop: (prompt: string) => void }
+type Props = { onAuthError: () => void; onDevelop: (prompt: string) => void; onGo: (tab: Tab) => void }
 
-export default function Ideas({ onAuthError, onDevelop }: Props) {
+export default function Ideas({ onAuthError, onDevelop, onGo }: Props) {
   const [ideas, setIdeas] = useState<Idea[]>([])
+  const [withTask, setWithTask] = useState<Set<string>>(new Set()) // ideias que ja viraram tarefa
+  const [note, setNote] = useState('')
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [tag, setTag] = useState('')
@@ -20,7 +23,23 @@ export default function Ideas({ onAuthError, onDevelop }: Props) {
 
   useEffect(() => {
     listIdeas().then(setIdeas).catch(fail)
+    listTasks()
+      .then((ts) => setWithTask(new Set(ts.flatMap((t) => (t.idea_id ? [t.idea_id] : [])))))
+      .catch(fail)
   }, [fail])
+
+  async function toTask(idea: Idea) {
+    setNote('')
+    try {
+      await createTask({ title: idea.title, details: idea.body, idea_id: idea.id })
+      setWithTask((set) => new Set(set).add(idea.id))
+      setNote(`"${idea.title}" virou uma tarefa.`)
+    } catch (err) {
+      if (err instanceof AuthError) return fail(err)
+      if (err instanceof Error && /já virou/.test(err.message)) setWithTask((set) => new Set(set).add(idea.id))
+      setNote(err instanceof Error ? err.message : 'Não consegui criar a tarefa.')
+    }
+  }
 
   async function add(e: React.FormEvent) {
     e.preventDefault()
@@ -82,6 +101,15 @@ export default function Ideas({ onAuthError, onDevelop }: Props) {
         </button>
       </form>
 
+      {note && (
+        <p role="status" className="glass flex items-center gap-3 rounded-full px-5 py-2.5 text-sm">
+          <Check className="size-4 shrink-0" /> {note}
+          <button onClick={() => onGo('tasks')} className="ml-auto text-xs underline underline-offset-4 hover:text-white">
+            Ver tarefas
+          </button>
+        </p>
+      )}
+
       <div className="grid gap-4 md:grid-cols-3">
         {COLUMNS.map((col, ci) => {
           const list = ideas.filter((i) => i.status === col.id)
@@ -110,8 +138,24 @@ export default function Ideas({ onAuthError, onDevelop }: Props) {
                         onClick={() => develop(idea)}
                         className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs text-ink hover:bg-white/20"
                       >
-                        <Sparkles className="size-3.5" /> Desenvolver com Ayran
+                        <Sparkles className="size-3.5" /> Desenvolver
                       </button>
+                      {withTask.has(idea.id) ? (
+                        <button
+                          onClick={() => onGo('tasks')}
+                          title="Ver nas tarefas"
+                          className="flex items-center gap-1 rounded-full border border-white/15 px-2.5 py-1 text-xs text-dim hover:text-ink"
+                        >
+                          <Check className="size-3.5" /> Já é tarefa
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => toTask(idea)}
+                          className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs text-ink hover:bg-white/20"
+                        >
+                          <ListTodo className="size-3.5" /> Virar tarefa
+                        </button>
+                      )}
                       <div className="ml-auto flex gap-1">
                         {ci > 0 && (
                           <IconBtn label="Voltar" onClick={() => move(idea, -1)}>

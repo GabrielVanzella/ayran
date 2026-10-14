@@ -13,6 +13,7 @@ import {
   Wind,
 } from 'lucide-react'
 import Dial from './Dial'
+import TasksCard from './TasksCard'
 import CityViewEditor from './CityViewEditor'
 import LocationPicker from './LocationPicker'
 import {
@@ -276,7 +277,11 @@ export default function Home(p: Props) {
       </div>
 
       {/* ---------- noticias + ideias ---------- */}
-      <section className="glass order-4 rounded-[28px] p-5 lg:col-span-8">
+      <div className="order-3 lg:col-span-4">
+        <TasksCard onMore={() => p.onGo('tasks')} onAuthError={p.onAuthError} />
+      </div>
+
+      <section className="glass order-4 rounded-[28px] p-5 lg:col-span-5">
         <Header icon={Newspaper} title="Notícias" onMore={() => p.onGo('news')} />
         {news.length === 0 && <p className="text-sm text-dim">Carregando manchetes…</p>}
         <ul className="divide-y divide-white/10">
@@ -293,7 +298,7 @@ export default function Home(p: Props) {
         </ul>
       </section>
 
-      <section className="glass order-5 rounded-[28px] p-5 lg:col-span-4">
+      <section className="glass order-5 rounded-[28px] p-5 lg:col-span-3">
         <Header icon={Lightbulb} title="Ideias em aberto" onMore={() => p.onGo('ideas')} />
         {ideas.length === 0 ? (
           <button onClick={() => p.onGo('ideas')} className="text-sm text-dim transition hover:text-ink">

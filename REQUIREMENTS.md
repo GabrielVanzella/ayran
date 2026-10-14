@@ -299,3 +299,19 @@ Itens originais da fase:
 - [ ] Início dos serviços sem precisar de login no Windows (hoje sobem no logon; Gabriel preferiu manter o login por enquanto) e "horas ativas" do Windows Update
 
 (Notas de rede e governança do servidor: mantidas em arquivo privado, fora deste repositório.)
+### Tarefas (14/10)
+- [x] **Tarefas pessoais**: aba Tarefas (filtros abertas/hoje/atrasadas/concluídas, prazo, status, editar/excluir), cartão na Home com criação rápida ("Hoje"), e **ideia → tarefa** (botão "Virar tarefa" na aba Ideias; uma ideia só vira tarefa uma vez). Cada usuário vê só as próprias. API: `/api/tasks`
+
+### Backlog pedido pelo Gabriel (14/10) — a priorizar
+- [ ] **Equipe**: atribuir tarefas a funcionários, carga por pessoa, suspender/reativar acesso
+- [ ] **Projetos/Git**: conexão com os repositórios (commits, PRs, issues, atividade por pessoa)
+- [ ] **Foto real da internet** (não gerada por IA) como fundo da Home, com crédito/licença (Wikimedia Commons / Pexels / Unsplash)
+- [ ] **Redes sociais da VZ**: calendário de conteúdo, rascunhos, legendas e imagens; publicar só com aprovação explícita
+- [ ] **Agente de programação próprio** (substituir o Cline) usando o Ayran Code
+- [ ] **Logs/auditoria de todos na plataforma** (somente admin; avisar a equipe — LGPD)
+- [ ] **IA que aprende sempre**: memória de longo prazo, RAG dos projetos, 👍/👎 como dataset; LoRA/destilação quando houver GPU de 24 GB
+- [ ] **Vida toda (life-OS)**: agenda e compromissos, tendências, notificações, **falar com a IA para criar tarefas/ideias/compromissos** (tool calling)
+- [ ] **App no celular** (PWA com notificações push) e **integração com o carro** (central multimídia, quando comprar)
+- [ ] **Saúde**: integração com smartwatch (Health Connect / Apple Health), dados só locais
+- [ ] **Bancos e investimentos**: leitura apenas (Open Finance/agregador), credenciais nunca no chat/repositório; sugestões de investimento só informativas, sem recomendação regulada
+- [ ] **Pesquisa de integrações úteis** para a vida e para a empresa (a entregar)
