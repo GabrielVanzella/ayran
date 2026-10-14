@@ -310,6 +310,7 @@ Itens originais da fase:
 - [ ] **Agente de programação próprio** (substituir o Cline) usando o Ayran Code
 - [ ] **Logs/auditoria de todos na plataforma** (somente admin; avisar a equipe — LGPD)
 - [ ] **IA que aprende sempre**: memória de longo prazo, RAG dos projetos, 👍/👎 como dataset; LoRA/destilação quando houver GPU de 24 GB
+- [x] **Voz no chat** (14/10): ditar mensagem (microfone), modo conversa (ouve → responde falando → ouve de novo) e ler respostas em voz alta; usa o navegador (pt-BR). O reconhecimento de fala do Chrome/Edge passa pela nuvem do navegador. [ ] Voz 100% local (Whisper + voz neural) e wake word
 - [ ] **Vida toda (life-OS)**: agenda e compromissos, tendências, notificações, **falar com a IA para criar tarefas/ideias/compromissos** (tool calling)
 - [ ] **App no celular** (PWA com notificações push) e **integração com o carro** (central multimídia, quando comprar)
 - [ ] **Saúde**: integração com smartwatch (Health Connect / Apple Health), dados só locais

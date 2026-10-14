@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Brain, History, Plus, Send, Square, Trash2, X } from 'lucide-react'
+import { AudioLines, Brain, History, Mic, Plus, Send, Square, Trash2, Volume2, VolumeX, X } from 'lucide-react'
 import Orb from './Orb'
 import Markdown from './Markdown'
 import {
@@ -13,6 +13,7 @@ import {
   type ChatMsg,
   type ChatSummary,
 } from '../lib/api'
+import { canListen, canSpeak, cleanForSpeech, listen, speak, type Listener } from '../lib/voice'
 
 type Props = {
   userName: string
@@ -40,6 +41,23 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
+  // ---- voz ----
+  const [talk, setTalk] = useState(false) // modo conversa: ouve -> responde falando -> ouve de novo
+  const [listening, setListening] = useState(false)
+  const [speaking, setSpeaking] = useState(false)
+  const [heard, setHeard] = useState('')
+  const [readAloud, setReadAloud] = useState(false) // le as respostas em voz alta mesmo fora do modo conversa
+  const [voiceNote, setVoiceNote] = useState('')
+  const talkRef = useRef(false)
+  const readRef = useRef(false)
+  const listenerRef = useRef<Listener | null>(null)
+  const stopSpeakRef = useRef<(() => void) | null>(null)
+  const sendRef = useRef<(t: string) => Promise<string>>(async () => '')
+  const startListenRef = useRef<() => void>(() => {})
+  const silences = useRef(0)
+  talkRef.current = talk
+  readRef.current = readAloud
+
   const refreshHistory = useCallback(() => {
     listChats()
       .then(setHistory)
@@ -53,9 +71,9 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
   }, [messages])
 
   const send = useCallback(
-    async (text: string, base: ChatMsg[] = messages, id: string | null = chatId) => {
+    async (text: string, base: ChatMsg[] = messages, id: string | null = chatId): Promise<string> => {
       const prompt = text.trim()
-      if (!prompt || streaming) return
+      if (!prompt || streaming) return ''
       setError('')
       setInput('')
       const convo: ChatMsg[] = [...base, { role: 'user', content: prompt }]
@@ -75,7 +93,10 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
           ctrl.signal,
         )
       } catch (e) {
-        if (e instanceof AuthError) return onAuthError()
+        if (e instanceof AuthError) {
+          onAuthError()
+          return ''
+        }
         if (!(e instanceof DOMException && e.name === 'AbortError')) {
           setError(e instanceof Error ? e.message : 'Falha ao falar com o Ayran')
         }
@@ -95,9 +116,118 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
           /* historico e best-effort */
         }
       }
+      return answer
     },
     [messages, chatId, streaming, onAuthError, refreshHistory],
   )
+
+  sendRef.current = (t) => send(t)
+
+  const stopVoice = useCallback(() => {
+    listenerRef.current?.stop()
+    listenerRef.current = null
+    stopSpeakRef.current?.()
+    stopSpeakRef.current = null
+    setListening(false)
+    setSpeaking(false)
+    setHeard('')
+  }, [])
+
+  const say = useCallback((answer: string) => {
+    const text = cleanForSpeech(splitThinking(answer).answer)
+    if (!text) {
+      if (talkRef.current) startListenRef.current()
+      return
+    }
+    setSpeaking(true)
+    const cancel = speak(text, () => {
+      if (stopSpeakRef.current !== cancel) return // foi interrompida por outra fala/acao
+      stopSpeakRef.current = null
+      setSpeaking(false)
+      if (talkRef.current) startListenRef.current()
+    })
+    stopSpeakRef.current = cancel
+  }, [])
+
+  startListenRef.current = () => {
+    listenerRef.current?.stop()
+    setVoiceNote('')
+    setListening(true)
+    let sent = false
+    const l = listen({
+      onInterim: setHeard,
+      onFinal: (t) => {
+        if (!t) return
+        sent = true
+        silences.current = 0
+        setHeard('')
+        sendRef.current(t).then((a) => {
+          if (a && (talkRef.current || readRef.current)) say(a)
+          else if (talkRef.current) startListenRef.current()
+        })
+      },
+      onEnd: (reason) => {
+        if (listenerRef.current !== l) return
+        listenerRef.current = null
+        setListening(false)
+        setHeard('')
+        if (sent) return
+        if (reason === 'denied') {
+          setTalk(false)
+          setVoiceNote('O navegador bloqueou o microfone. Libere o acesso no cadeado da barra de endereço.')
+        } else if (reason === 'error') {
+          setTalk(false)
+          setVoiceNote('Não consegui ouvir agora. Verifique o microfone e a internet e tente de novo.')
+        } else if (talkRef.current) {
+          // silencio: tenta de novo algumas vezes e depois encerra o modo conversa
+          if (++silences.current >= 4) {
+            setTalk(false)
+            setVoiceNote('Fiquei sem ouvir nada e encerrei o modo conversa.')
+          } else startListenRef.current()
+        }
+      },
+    })
+    listenerRef.current = l
+  }
+
+  function toggleTalk() {
+    if (talk) {
+      setTalk(false)
+      talkRef.current = false
+      stopVoice()
+      return
+    }
+    abortRef.current?.abort()
+    stopVoice()
+    silences.current = 0
+    setTalk(true)
+    talkRef.current = true
+    startListenRef.current()
+  }
+
+  function dictate() {
+    if (listening) return stopVoice()
+    stopVoice()
+    setTalk(false)
+    talkRef.current = false
+    setVoiceNote('')
+    setListening(true)
+    const l = listen({
+      onInterim: (t) => setInput(t),
+      onFinal: (t) => setInput(t),
+      onEnd: (reason) => {
+        if (listenerRef.current !== l) return
+        listenerRef.current = null
+        setListening(false)
+        if (reason === 'denied') setVoiceNote('O navegador bloqueou o microfone. Libere o acesso no cadeado da barra de endereço.')
+        else if (reason === 'error') setVoiceNote('Não consegui ouvir agora. Verifique o microfone e a internet.')
+        inputRef.current?.focus()
+      },
+    })
+    listenerRef.current = l
+  }
+
+  useEffect(() => () => stopVoice(), [stopVoice])
 
   // pedido vindo de outra tela (inicio, ideias, noticias): abre conversa nova
   useEffect(() => {
@@ -110,6 +240,8 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
 
   function newChat() {
     abortRef.current?.abort()
+    stopVoice()
+    setTalk(false)
     setMessages([])
     setChatId(null)
     setError('')
@@ -187,13 +319,32 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
           <button onClick={() => setShowHistory(true)} className="text-dim lg:hidden" aria-label="Histórico">
             <History className="size-5" />
           </button>
-          <Orb size={26} thinking={streaming} />
+          <Orb size={26} thinking={streaming || listening || speaking} />
           <div className="min-w-0 flex-1">
             <p className="font-semibold">Ayran</p>
             <p className="truncate text-xs text-dim">
-              {streaming ? 'pensando…' : 'escolhe sozinho o especialista: conversa, raciocínio ou código'}
+              {streaming
+                ? 'pensando…'
+                : speaking
+                  ? 'falando…'
+                  : listening
+                    ? 'ouvindo…'
+                    : 'escolhe sozinho o especialista: conversa, raciocínio ou código'}
             </p>
           </div>
+          {canSpeak() && (
+            <button
+              onClick={() => {
+                if (readAloud) stopVoice()
+                setReadAloud((v) => !v)
+              }}
+              aria-pressed={readAloud}
+              title={readAloud ? 'Parar de ler as respostas' : 'Ler as respostas em voz alta'}
+              className={`rounded-lg p-2 hover:bg-white/5 ${readAloud ? 'text-ink' : 'text-dim hover:text-ink'}`}
+            >
+              {readAloud ? <Volume2 className="size-5" /> : <VolumeX className="size-5" />}
+            </button>
+          )}
           <button onClick={newChat} className="rounded-lg p-2 text-dim hover:bg-white/5 hover:text-ink" aria-label="Nova conversa">
             <Plus className="size-5" />
           </button>
@@ -235,6 +386,35 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
           }}
           className="border-t border-line p-3 sm:p-4"
         >
+          {(talk || voiceNote) && (
+            <p role="status" className="mx-auto mb-2 flex max-w-3xl items-center gap-2 px-3 text-xs text-dim">
+              {talk ? (
+                <>
+                  <AudioLines className="size-3.5" />
+                  {speaking
+                    ? 'Falando… toque em Modo conversa para encerrar.'
+                    : streaming
+                      ? 'Pensando…'
+                      : listening
+                        ? heard
+                          ? `“${heard}”`
+                          : 'Pode falar, estou ouvindo.'
+                        : 'Aguardando…'}
+                  {speaking && (
+                    <button
+                      type="button"
+                      onClick={() => stopSpeakRef.current?.()}
+                      className="ml-auto underline underline-offset-4 hover:text-ink"
+                    >
+                      pular resposta
+                    </button>
+                  )}
+                </>
+              ) : (
+                voiceNote
+              )}
+            </p>
+          )}
           <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-line bg-white/[0.06] p-2 focus-within:border-neon/50">
             <textarea
               ref={inputRef}
@@ -251,6 +431,30 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
               className="scroll-thin max-h-48 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 outline-none placeholder:text-dim/70"
               style={{ fieldSizing: 'content' } as React.CSSProperties}
             />
+            {canListen() && (
+              <>
+                <button
+                  type="button"
+                  onClick={dictate}
+                  aria-pressed={listening && !talk}
+                  title="Ditar mensagem"
+                  aria-label="Ditar mensagem"
+                  className={`rounded-full p-2.5 transition ${listening && !talk ? 'animate-pulse bg-red-500/30 text-red-200' : 'text-dim hover:bg-white/10 hover:text-ink'}`}
+                >
+                  <Mic className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleTalk}
+                  aria-pressed={talk}
+                  title="Modo conversa: falo, o Ayran responde falando"
+                  aria-label="Modo conversa"
+                  className={`rounded-full p-2.5 transition ${talk ? 'bg-white text-void' : 'text-dim hover:bg-white/10 hover:text-ink'}`}
+                >
+                  <AudioLines className="size-4" />
+                </button>
+              </>
+            )}
             {streaming ? (
               <button
                 type="button"
