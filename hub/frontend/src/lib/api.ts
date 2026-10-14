@@ -375,3 +375,36 @@ export const createTask = (t: { title: string; details?: string; due_date?: stri
 export const updateTask = (id: string, patch: Partial<Pick<Task, 'title' | 'details' | 'due_date' | 'status'>>) =>
   request<Task>(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(patch) })
 export const deleteTask = (id: string) => request(`/api/tasks/${id}`, { method: 'DELETE' })
+
+// ---------- voz local (Whisper + Piper no servidor) ----------
+
+export type VoiceStatus = { stt: boolean; tts: boolean; default: string | null; voices: { id: string; name: string }[] }
+
+export const voiceStatus = () => request<VoiceStatus>('/api/voice/status')
+
+async function voiceFetch(path: string, init: RequestInit): Promise<Response> {
+  const res = await fetch(BASE + path, { ...init, headers: { Authorization: `Bearer ${getToken()}`, ...init.headers } })
+  if (res.status === 401) throw new AuthError('Sessão expirada')
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(typeof body.detail === 'string' ? body.detail : `Erro ${res.status}`)
+  }
+  return res
+}
+
+/** Audio gravado -> texto (Whisper no servidor). */
+export async function transcribeAudio(blob: Blob, signal?: AbortSignal): Promise<string> {
+  const res = await voiceFetch('/api/voice/stt', { method: 'POST', body: blob, headers: { 'Content-Type': blob.type || 'audio/webm' }, signal })
+  return ((await res.json()) as { text: string }).text
+}
+
+/** Texto -> audio WAV (Piper no servidor). */
+export async function synthesizeSpeech(text: string, voice: string, speed: number, signal?: AbortSignal): Promise<Blob> {
+  const res = await voiceFetch('/api/voice/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voice, speed }),
+    signal,
+  })
+  return res.blob()
+}

@@ -34,6 +34,7 @@ from cityscenes import build_router as build_city_router
 from media import build_router as build_media_router, init_media_db
 from system import build_router as build_system_router
 from team import build_router as build_team_router
+from voice import build_router as build_voice_router
 from weather import build_router as build_weather_router
 
 OWUI_URL = os.environ.get("OWUI_URL", "http://127.0.0.1:8080")
@@ -201,6 +202,7 @@ def forget_user(user_id: str):
 
 app.include_router(build_team_router(current_user, forget_user))
 app.include_router(build_account_router(current_user))
+app.include_router(build_voice_router(current_user))
 
 
 # ---------------- login automatico (so no proprio servidor) ----------------

@@ -12,8 +12,11 @@ import {
   streamChat,
   type ChatMsg,
   type ChatSummary,
+  type VoiceStatus,
+  voiceStatus,
 } from '../lib/api'
 import { canListen, cleanForSpeech, createSpeaker, listen, type Listener, type Speaker } from '../lib/voice'
+import { createLocalSpeaker, listenLocal } from '../lib/localvoice'
 import VoiceCall, { type CallState } from './VoiceCall'
 
 type Props = {
@@ -69,6 +72,36 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
   const startListenRef = useRef<() => void>(() => {})
   const silences = useRef(0)
   talkRef.current = talk
+
+  // voz local (Whisper + Piper no servidor); sem ela, cai no reconhecimento do navegador
+  const [local, setLocal] = useState<VoiceStatus | null>(null)
+  const [processing, setProcessing] = useState(false)
+  const [voiceId, setVoiceId] = useState(() => {
+    try {
+      return localStorage.getItem('ayran.voice') ?? ''
+    } catch {
+      return ''
+    }
+  })
+  const useLocal = !!local?.stt && !!local?.tts && !!navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== 'undefined'
+  const localRef = useRef(false)
+  localRef.current = useLocal
+  const voiceRef = useRef('')
+  const chosenVoice = local?.voices.some((v) => v.id === voiceId) ? voiceId : (local?.default ?? '')
+  voiceRef.current = chosenVoice
+
+  useEffect(() => {
+    voiceStatus().then(setLocal).catch(() => setLocal(null))
+  }, [])
+
+  function pickVoice(id: string) {
+    setVoiceId(id)
+    try {
+      localStorage.setItem('ayran.voice', id)
+    } catch {
+      /* preferencia e opcional */
+    }
+  }
 
   const refreshHistory = useCallback(() => {
     listChats()
@@ -148,18 +181,20 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
     speakerRef.current = null
     setListening(false)
     setSpeaking(false)
+    setProcessing(false)
     setHeard('')
   }, [])
 
   // o Ayran fala frase a frase enquanto a resposta ainda esta sendo escrita
   const converse = useCallback((said: string) => {
     let idx = 0
-    const speaker = createSpeaker(() => {
+    const onIdle = () => {
       if (speakerRef.current !== speaker) return
       speakerRef.current = null
       setSpeaking(false)
       if (talkRef.current) startListenRef.current()
-    })
+    }
+    const speaker: Speaker = localRef.current ? createLocalSpeaker(voiceRef.current, 1.0, onIdle) : createSpeaker(onIdle)
     speakerRef.current = speaker
     const feed = (full: string, final: boolean) => {
       const ans = splitThinking(full).answer
@@ -185,32 +220,39 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
     setVoiceNote('')
     setListening(true)
     let sent = false
-    const l = listen({
+    const handlers = {
       onInterim: setHeard,
-      onFinal: (t) => {
+      onProcessing: () => {
+        setListening(false)
+        setProcessing(true)
+      },
+      onFinal: (t: string) => {
+        setProcessing(false)
         if (!t) return
         sent = true
         silences.current = 0
         setHeard(t)
         converse(t)
       },
-      onEnd: (reason) => {
+      onEnd: (reason: 'ok' | 'silence' | 'denied' | 'error', detail?: string) => {
         if (listenerRef.current !== l) return
         listenerRef.current = null
         setListening(false)
+        setProcessing(false)
         if (!sent) setHeard('')
         if (sent) return
         if (reason === 'denied') {
           setVoiceNote('O navegador bloqueou o microfone. Libere o acesso no cadeado da barra de endereço.')
         } else if (reason === 'error') {
-          setVoiceNote('Não consegui ouvir agora. Verifique o microfone e a internet e toque em Falar.')
+          setVoiceNote(detail ?? 'Não consegui ouvir agora. Verifique o microfone e toque em Falar.')
         } else if (talkRef.current) {
           // silencio: tenta de novo algumas vezes e depois espera o toque
           if (++silences.current < 4) startListenRef.current()
           else setVoiceNote('Não ouvi nada. Toque em Falar quando quiser continuar.')
         }
       },
-    })
+    }
+    const l: Listener = localRef.current ? listenLocal(handlers) : listen(handlers)
     listenerRef.current = l
   }
 
@@ -236,24 +278,27 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
     stopVoice()
     setVoiceNote('')
     setListening(true)
-    const l = listen({
-      onInterim: (t) => setInput(t),
-      onFinal: (t) => setInput(t),
-      onEnd: (reason) => {
+    const handlers = {
+      onInterim: (t: string) => setInput(t),
+      onProcessing: () => setProcessing(true),
+      onFinal: (t: string) => setInput(t),
+      onEnd: (reason: 'ok' | 'silence' | 'denied' | 'error', detail?: string) => {
         if (listenerRef.current !== l) return
         listenerRef.current = null
         setListening(false)
+        setProcessing(false)
         if (reason === 'denied') setVoiceNote('O navegador bloqueou o microfone. Libere o acesso no cadeado da barra de endereço.')
-        else if (reason === 'error') setVoiceNote('Não consegui ouvir agora. Verifique o microfone e a internet.')
+        else if (reason === 'error') setVoiceNote(detail ?? 'Não consegui ouvir agora. Verifique o microfone.')
         inputRef.current?.focus()
       },
-    })
+    }
+    const l: Listener = localRef.current ? listenLocal(handlers) : listen(handlers)
     listenerRef.current = l
   }
 
   useEffect(() => () => stopVoice(), [stopVoice])
 
-  const callState: CallState = streaming ? 'thinking' : speaking ? 'speaking' : listening ? 'listening' : 'idle'
+  const callState: CallState = streaming || processing ? 'thinking' : speaking ? 'speaking' : listening ? 'listening' : 'idle'
 
   // pedido vindo de outra tela (inicio, ideias, noticias): abre conversa nova
   useEffect(() => {
@@ -332,6 +377,9 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
           heard={heard}
           reply={reply}
           note={voiceNote}
+          voices={local?.voices ?? []}
+          voice={chosenVoice}
+          onVoice={pickVoice}
           onHangUp={hangUp}
           onSkip={() => speakerRef.current?.stop()}
           onListen={() => {

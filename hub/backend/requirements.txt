@@ -5,3 +5,5 @@ feedparser==6.0.11
 psutil==7.1.0
 Pillow==11.3.0
 python-multipart==0.0.20
+piper-tts
+faster-whisper

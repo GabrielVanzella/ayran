@@ -10,6 +10,9 @@ type Props = {
   onHangUp: () => void
   onSkip: () => void
   onListen: () => void
+  voices: { id: string; name: string }[]
+  voice: string
+  onVoice: (id: string) => void
 }
 
 const LABEL: Record<CallState, string> = {
@@ -20,10 +23,28 @@ const LABEL: Record<CallState, string> = {
 }
 
 /** Tela de conversa por voz: so a esfera, o que voce disse e o que o Ayran esta dizendo. */
-export default function VoiceCall({ state, heard, reply, note, onHangUp, onSkip, onListen }: Props) {
+export default function VoiceCall({ state, heard, reply, note, onHangUp, onSkip, onListen, voices, voice, onVoice }: Props) {
   return (
     <div role="dialog" aria-label="Conversa por voz" className="fixed inset-0 z-50 flex flex-col items-center bg-black/85 px-6 py-10 backdrop-blur-xl">
-      <p className="text-sm text-white/60">Conversa com o Ayran</p>
+      <div className="flex w-full max-w-xl items-center justify-between gap-3 text-sm text-white/60">
+        <p>Conversa com o Ayran</p>
+        {voices.length > 1 && (
+          <label className="flex items-center gap-2">
+            <span>Voz</span>
+            <select
+              value={voice}
+              onChange={(e) => onVoice(e.target.value)}
+              className="rounded-full border border-white/20 bg-black/40 px-3 py-1 text-white outline-none"
+            >
+              {voices.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-8">
         <button
