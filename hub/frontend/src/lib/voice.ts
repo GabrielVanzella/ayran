@@ -128,3 +128,64 @@ export function speak(text: string, onEnd: () => void): () => void {
     finish()
   }
 }
+
+export type Speaker = {
+  enqueue: (text: string) => void
+  /** avisa que nao chegara mais texto; onIdle roda quando a fila esvaziar */
+  finish: () => void
+  stop: () => void
+}
+
+/** Fala uma fila de trechos, um apos o outro, enquanto o texto ainda esta sendo gerado. */
+export function createSpeaker(onIdle: () => void): Speaker {
+  const queue: string[] = []
+  let busy = false
+  let finished = false
+  let stopped = false
+  let idled = false
+  const idle = () => {
+    if (idled) return
+    idled = true
+    onIdle()
+  }
+  const pump = () => {
+    if (stopped || busy) return
+    const t = queue.shift()
+    if (t === undefined) {
+      if (finished) idle()
+      return
+    }
+    if (!canSpeak()) return pump()
+    busy = true
+    const u = new SpeechSynthesisUtterance(t)
+    u.lang = 'pt-BR'
+    const v = pickVoice()
+    if (v) u.voice = v
+    u.rate = 1.05
+    const done = () => {
+      busy = false
+      pump()
+    }
+    u.onend = done
+    u.onerror = done
+    speechSynthesis.speak(u)
+  }
+  return {
+    enqueue(t) {
+      if (stopped) return
+      queue.push(t)
+      pump()
+    },
+    finish() {
+      finished = true
+      pump()
+    },
+    stop() {
+      if (stopped) return
+      stopped = true
+      queue.length = 0
+      if (canSpeak()) speechSynthesis.cancel()
+      idle()
+    },
+  }
+}
