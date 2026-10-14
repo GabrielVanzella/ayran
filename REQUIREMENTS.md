@@ -295,3 +295,5 @@ Itens originais da fase:
   - Limite honesto: **o gerador não escreve texto bem**; o texto do post entra depois (Canva etc.)
   - No notebook de 4 GB: ~1 min nos tamanhos rápidos, ~2–3 min nos de 1080+, vários minutos em 2048²
   - [ ] Salvar modelos próprios da VZ (identidade visual: cores, estilo) como padrões da equipe
+- [x] **Notebook dormia mesmo com "nunca suspender"** (14/10): o Dell usa *Modern Standby* (S0, Wi-Fi conectado) e entra em espera por "Idle Timeout" (08:47, 09:06 — voltou só ao mexer no mouse/teclado), parando tudo. Ajustado no plano de energia: suspensão autônoma 120 s → nunca, "permitir estados de espera" → desligado, tela não apaga ao travar. **Ainda não confirmado na prática.** Se voltar a dormir: desligar o Modern Standby no registro (`HKLM\SYSTEM\CurrentControlSet\Control\Power\PlatformAoAcOverride = 0`, precisa de administrador + reinício)
+- [ ] Início dos serviços sem precisar de login no Windows (hoje sobem no logon; Gabriel preferiu manter o login por enquanto) e "horas ativas" do Windows Update
