@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { CalendarDays, Home as HomeIcon, Lightbulb, ListTodo, Mail as MailIcon, MessageSquare, Newspaper, Palette, Sparkles, TrendingUp, Users } from 'lucide-react'
+import { CalendarDays, FolderGit2, Home as HomeIcon, Lightbulb, ListTodo, Mail as MailIcon, MessageSquare, Newspaper, Palette, Sparkles, TrendingUp, Users } from 'lucide-react'
 import Account from './components/Account'
 import Tasks from './components/Tasks'
 import Team from './components/Team'
@@ -12,6 +12,7 @@ import Showcase from './components/Showcase'
 import Mail from './components/Mail'
 import Agenda from './components/Agenda'
 import Business from './components/Business'
+import Projects from './components/Projects'
 import NotificationBell from './components/NotificationBell'
 import { applySkin, loadSkin, type SkinId } from './lib/skin'
 import { SKIN_COMPONENTS } from './skins'
@@ -41,7 +42,7 @@ import { loadPinnedScene, savePinnedScene, sceneByClock, sceneFromUrl, type Pin 
 import { useBrand } from './lib/brand'
 import { usePresenting } from './lib/present'
 
-export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'tasks' | 'mail' | 'agenda' | 'business' | 'recursos' | 'team'
+export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'tasks' | 'mail' | 'agenda' | 'business' | 'projects' | 'recursos' | 'team'
 
 const NAV: { id: Tab; label: string; icon: typeof HomeIcon; adminOnly?: boolean }[] = [
   { id: 'home', label: 'Início', icon: HomeIcon },
@@ -53,6 +54,7 @@ const NAV: { id: Tab; label: string; icon: typeof HomeIcon; adminOnly?: boolean 
   { id: 'mail', label: 'E-mail', icon: MailIcon },
   { id: 'agenda', label: 'Agenda', icon: CalendarDays },
   { id: 'business', label: 'Negócio', icon: TrendingUp },
+  { id: 'projects', label: 'Projetos', icon: FolderGit2 },
   { id: 'recursos', label: 'Recursos', icon: Sparkles },
   { id: 'team', label: 'Equipe', icon: Users, adminOnly: true },
 ]
@@ -67,6 +69,7 @@ const TITLES: Record<Tab, string> = {
   mail: 'E-mail',
   agenda: 'Agenda',
   business: 'Negócio',
+  projects: 'Projetos',
   recursos: 'Recursos',
   team: 'Equipe',
 }
@@ -340,6 +343,7 @@ export default function App() {
         {tab === 'mail' && <Mail onAuthError={logout} onAsk={ask} onGo={setTab} focusId={mailFocus} />}
         {tab === 'agenda' && <Agenda onAuthError={logout} />}
         {tab === 'business' && <Business onAuthError={logout} onAsk={ask} onGo={setTab} />}
+        {tab === 'projects' && <Projects onAuthError={logout} onAsk={ask} onGo={setTab} isAdmin={isAdmin} />}
         {tab === 'recursos' && <Showcase onGo={setTab} isAdmin={isAdmin} />}
         {tab === 'team' && isAdmin && <Team onAuthError={logout} />}
       </Shell>

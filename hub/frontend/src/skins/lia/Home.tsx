@@ -157,7 +157,7 @@ export default function LiaHome(p: HomeProps) {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <TasksCard onMore={() => p.onGo('tasks')} onAuthError={p.onAuthError} />
-        <ProjectRings onMore={() => p.onGo('business')} />
+        <ProjectRings onMore={() => p.onGo('projects')} onAuthError={p.onAuthError} />
         <TeamTile onMore={() => p.onGo('business')} />
       </div>
 

@@ -10,7 +10,7 @@ import time
 import uuid
 from datetime import date, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 import samples
@@ -98,7 +98,8 @@ def _overlaps(a: dict, b: dict) -> bool:
     return a["start"] < b["end"] and b["start"] < a["end"]
 
 
-def build_router(db, current_user) -> APIRouter:
+def build_router(db, current_user, dev_activity=None) -> APIRouter:
+    """dev_activity(request, days): atividade real dos projetos Git conectados (opcional)."""
     router = APIRouter(prefix="/api")
 
     # ------------------------------------------------------------ e-mail
@@ -290,7 +291,7 @@ def build_router(db, current_user) -> APIRouter:
 
     # ------------------------------------------------------------ resumo do dia
     @router.get("/briefing")
-    async def briefing(user=Depends(current_user)):
+    async def briefing(request: Request, user=Depends(current_user)):
         """Mensagem diaria para o gestor: o que andou ontem e o que importa hoje.
         Tarefas, e-mails e agenda saem dos dados reais da plataforma; o andamento dos projetos e 'exemplo' (Git ainda nao conectado)."""
         now = datetime.now()
@@ -319,6 +320,31 @@ def build_router(db, current_user) -> APIRouter:
             {"text": "App de entregas: correção do cálculo de frete publicada em produção.", "progress": 100, "delta": "entregue"},
             {"text": "Ayran: e-mail, agenda e resumo diário integrados à Central.", "progress": 58, "delta": "+15 pts"},
         ]
+        dev_real = False
+        if dev_activity:
+            try:
+                act = await dev_activity(request, 2)
+            except Exception:  # GitHub fora do ar etc.: cai nos dados de exemplo
+                act = None
+            if act and act.get("connected"):
+                dev_real = True
+                dev = []
+                for pr in act["projects"]:
+                    yc = []
+                    for c in pr.get("commits", []):
+                        try:
+                            d = datetime.fromisoformat(c["date"].replace("Z", "+00:00")).astimezone().date()
+                        except (ValueError, AttributeError, TypeError):
+                            continue
+                        if d == yesterday:
+                            yc.append(c)
+                    if not yc:
+                        continue
+                    who = sorted({c["author"] for c in yc})
+                    msgs = [c["message"] for c in yc[:2]]
+                    dev.append({"text": f"{pr['name']}: {len(yc)} commit{'s' if len(yc) > 1 else ''} de {', '.join(who)}. " + " · ".join(msgs)})
+                if not dev:
+                    dev = [{"text": "Nenhum commit ontem nos projetos conectados."}]
         mine: list[dict] = []
         if done_y:
             mine.append({"text": f"Você concluiu {done_y} tarefa{'s' if done_y > 1 else ''} ontem."})
@@ -342,7 +368,7 @@ def build_router(db, current_user) -> APIRouter:
             {"text": "O contrato do Cliente ABC vence em 30 dias e ainda não há conversa de renovação.", "tone": "warn"},
         ]
         sections = [
-            {"id": "dev", "title": "Ontem no desenvolvimento", "source": "exemplo", "items": dev},
+            {"id": "dev", "title": "Ontem no desenvolvimento", "source": "real" if dev_real else "exemplo", "items": dev},
             {"id": "me", "title": "Para você hoje", "source": "real", "items": mine},
             {"id": "att", "title": "Pontos de atenção", "source": "exemplo", "items": attention},
         ]

@@ -524,3 +524,45 @@ export async function uploadBrandImage(kind: 'hero' | 'logo', file: File): Promi
   }
   return res.json()
 }
+
+// ---------- projetos e Git ----------
+
+export type ProjectBase = { id: string; name: string; kind: 'github' | 'local'; ref: string; description: string; language: string }
+export type ProjectCommit = { sha: string; author: string; date: string | null; message: string; url: string | null }
+export type ProjectPR = { number: number; title: string; author: string; age_days: number | null; url: string | null }
+export type ProjectOverview = ProjectBase & {
+  branch: string | null
+  last_commit: string | null
+  uncommitted: number | null
+  open_issues: number | null
+  remote: string | null
+  url: string | null
+  private: boolean
+  commits_7d: number
+  commits_30d: number
+  days_since_commit: number | null
+  status: 'ativo' | 'morno' | 'parado' | 'sem-atividade'
+  prs: ProjectPR[]
+  recent: ProjectCommit[]
+  authors_7d: { name: string; commits: number }[]
+}
+export type DiscoveredRepo = { ref: string; name: string; description: string; language: string; pushed_at: string | null; private: boolean; connected: boolean }
+
+export const listProjects = () => request<ProjectBase[]>('/api/projects')
+export const getProject = (id: string, fresh = false) => request<ProjectOverview>(`/api/projects/${id}${fresh ? '?fresh=true' : ''}`)
+export const discoverRepos = (owner: string) => request<DiscoveredRepo[]>(`/api/projects/discover?owner=${encodeURIComponent(owner)}`)
+export const addProject = (p: { kind: 'github' | 'local'; ref: string; name?: string }) =>
+  request<ProjectBase>('/api/projects', { method: 'POST', body: JSON.stringify(p) })
+export const removeProject = (id: string) => request(`/api/projects/${id}`, { method: 'DELETE' })
+export const githubTokenStatus = () => request<{ configured: boolean }>('/api/projects/token')
+export const saveGithubToken = (token: string) => request<{ configured: boolean }>('/api/projects/token', { method: 'PUT', body: JSON.stringify({ token }) })
+
+/** "ha 3 h", "ha 2 dias" a partir de uma data ISO. */
+export function agoIso(iso: string | null | undefined): string {
+  if (!iso) return 'sem commits'
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 3600) return `há ${Math.max(1, Math.round(s / 60))} min`
+  if (s < 86400) return `há ${Math.round(s / 3600)} h`
+  const d = Math.round(s / 86400)
+  return d === 1 ? 'ontem' : d < 60 ? `há ${d} dias` : `há ${Math.round(d / 30)} meses`
+}

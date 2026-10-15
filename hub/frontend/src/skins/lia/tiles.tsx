@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight, ListTodo, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react'
-import { AuthError, createTask, getInsights, getNews, listMail, timeAgo, type Insight, type Insights, type NewsItem } from '../../lib/api'
+import { AuthError, agoIso, createTask, getInsights, getNews, listMail, timeAgo, type Insight, type Insights, type NewsItem } from '../../lib/api'
+import { useProjectOverviews } from '../../lib/useProjects'
 import { ExampleTag } from '../../components/ui'
 import { todayISO } from '../../components/Tasks'
 import type { Tab } from '../../App'
@@ -120,7 +121,35 @@ function Ring({ value, label }: { value: number; label: string }) {
   )
 }
 
-export function ProjectRings({ onMore }: { onMore: () => void }) {
+export function ProjectRings({ onMore, onAuthError }: { onMore: () => void; onAuthError: () => void }) {
+  const real = useProjectOverviews(4, onAuthError)
+  if (real && real.length > 0) {
+    const max = Math.max(1, ...real.map((p) => p.commits_7d))
+    return (
+      <section className="glass rounded-[28px] p-5" aria-label="Projetos">
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="font-medium">Projetos</h2>
+          <button onClick={onMore} className="ml-auto flex items-center gap-1 text-xs text-dim hover:text-ink">
+            ver tudo <ArrowRight className="size-3" />
+          </button>
+        </div>
+        <ul className="grid grid-cols-2 gap-3">
+          {real.map((p) => (
+            <li key={p.id} className="flex items-center gap-3">
+              <span className="relative grid place-items-center">
+                <Ring value={(p.commits_7d / max) * 100} label={`${p.name}: ${p.commits_7d} commits em 7 dias`} />
+                <span className="absolute text-[11px] font-semibold tabular-nums">{p.commits_7d}</span>
+              </span>
+              <span className="min-w-0 text-xs leading-snug">
+                {p.name}
+                <span className="block text-dim">{agoIso(p.last_commit)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
   return (
     <section className="glass rounded-[28px] p-5" aria-label="Projetos">
       <div className="mb-3 flex items-center gap-2">

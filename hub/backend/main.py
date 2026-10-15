@@ -34,6 +34,7 @@ from brand import build_router as build_brand_router
 from cityscenes import build_router as build_city_router
 from media import build_router as build_media_router, init_media_db
 from office import build_router as build_office_router, init_office_db
+from projects import build_router as build_projects_router, collect_activity, init_projects_db
 from system import build_router as build_system_router
 from team import build_router as build_team_router
 from voice import build_router as build_voice_router
@@ -78,6 +79,7 @@ def init_db():
         )
         init_media_db(conn)
         init_office_db(conn)
+        init_projects_db(conn)
         if "idea_id" not in [r[1] for r in conn.execute("pragma table_info(tasks)")]:
             conn.execute("alter table tasks add column idea_id text")  # tarefa criada a partir de uma ideia
 
@@ -213,7 +215,15 @@ def purge_user_data(user_id: str):
 app.include_router(build_team_router(current_user, forget_user, purge_user_data))
 app.include_router(build_account_router(current_user))
 app.include_router(build_voice_router(current_user))
-app.include_router(build_office_router(db, current_user))
+projects_router = build_projects_router(db, current_user, AYRAN_HOME / "hub")
+app.include_router(projects_router)
+
+
+async def dev_activity(request: Request, days: int):
+    return await collect_activity(request, db, days, projects_router.overview_of)
+
+
+app.include_router(build_office_router(db, current_user, dev_activity))
 app.include_router(build_brand_router(current_user, AYRAN_HOME / "hub"))
 
 

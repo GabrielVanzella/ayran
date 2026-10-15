@@ -3,6 +3,7 @@ import {
   ArrowRight,
   AudioLines,
   CalendarDays,
+  FolderGit2,
   ListTodo,
   Mail,
   MessageSquare,
@@ -200,7 +201,7 @@ export default function Home(p: Props) {
 
       {/* ---------- acesso rapido a tudo ---------- */}
       <nav aria-label="Acesso rápido" className="mb-4">
-        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11">
+        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12">
           {SHORTCUTS.filter((x) => !x.admin || p.isAdmin).map(({ label, icon: Icon, tab, voice }) => (
             <li key={label}>
               <button
@@ -258,7 +259,7 @@ export default function Home(p: Props) {
       <div className="order-3 grid gap-4 md:grid-cols-2 lg:col-span-8">
         <CompanyKpis onMore={() => p.onGo('business')} onAuthError={p.onAuthError} />
         <div className="grid gap-4">
-          <ProjectsCard onMore={() => p.onGo('business')} />
+          <ProjectsCard onMore={() => p.onGo('projects')} onAuthError={p.onAuthError} />
           <TeamCard onMore={() => p.onGo('business')} />
         </div>
       </div>
@@ -315,6 +316,7 @@ const SHORTCUTS: { label: string; icon: typeof Mic; tab?: Tab; voice?: boolean; 
   { label: 'Agenda', icon: CalendarDays, tab: 'agenda' },
   { label: 'Tarefas', icon: ListTodo, tab: 'tasks' },
   { label: 'Negócio', icon: TrendingUp, tab: 'business' },
+  { label: 'Projetos', icon: FolderGit2, tab: 'projects' },
   { label: 'Ideias', icon: Lightbulb, tab: 'ideas' },
   { label: 'Notícias', icon: Newspaper, tab: 'news' },
   { label: 'Recursos', icon: Sparkles, tab: 'recursos' },

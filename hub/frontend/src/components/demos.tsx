@@ -625,7 +625,7 @@ export const FEATURES: Feature[] = [
   { id: 'insights', title: 'Inteligência de negócio', area: 'Empresa', status: 'previa', icon: TrendingUp, summary: 'Cruza os sistemas, aponta padrões e pontos de atenção por departamento.', Demo: DemoInsights },
   { id: 'integracoes', title: 'Integrações', area: 'Empresa', status: 'previa', icon: Plug, summary: 'Microsoft 365, Google, ERPs, CRMs e outros sistemas da empresa.', Demo: DemoIntegrations },
   { id: 'social', title: 'Redes sociais', area: 'Empresa', status: 'previa', icon: Share2, summary: 'Calendário de posts, legendas e imagens, com aprovação antes de publicar.', Demo: DemoSocial },
-  { id: 'git', title: 'Projetos e Git', area: 'Empresa', status: 'previa', icon: GitBranch, summary: 'Acompanha repositórios, PRs e a atividade de cada pessoa.', Demo: DemoGit },
+  { id: 'git', title: 'Projetos e Git', area: 'Empresa', status: 'ativo', icon: GitBranch, tab: 'projects', summary: 'Conecte o GitHub ou uma pasta Git e acompanhe commits, PRs e a atividade de cada pessoa.' },
   { id: 'auditoria', title: 'Auditoria e logs', area: 'Empresa', status: 'previa', icon: ScrollText, summary: 'Quem fez o quê na plataforma, visível só ao administrador.', Demo: DemoAudit },
   { id: 'oficina', title: 'Modo oficina', area: 'Pequeno comércio', status: 'previa', icon: Wrench, summary: 'Ordens de serviço, orçamentos e lembretes de revisão para mecânicas.', Demo: DemoWorkshop },
   { id: 'loja', title: 'Modo loja', area: 'Pequeno comércio', status: 'previa', icon: Store, summary: 'Vendas do dia, estoque baixo e promoções prontas para lojas físicas.', Demo: DemoStore },

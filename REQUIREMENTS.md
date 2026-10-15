@@ -362,3 +362,7 @@ Modelo de entrega: **uma instalação isolada por cliente** (começar assim); Sa
 - [x] **Imagem e logo da VZ instalados** (15/10): imagem principal do escritório (2752×1536, enquadramento "detalhes à direita", zoom 140% para o logo da parede não ficar sob o relógio) e logo (PNG com fundo transparente; na Ayran vai sobre uma plaquinha clara por ser de texto escuro). Config em `~/ayran-server/hub/brand/` (fora do git)
 - [x] Enquadramento da imagem (posição + zoom) nas configurações de identidade
 - Regra: testes de API **não** rodam contra a identidade real (`brand/`): usar cópia ou restaurar depois (um teste apagou o logo e a imagem em 15/10; foram reinstalados)
+
+### Projetos e Git (15/10)
+- [x] **Projetos e Git reais**: conecta repositórios do **GitHub** (público; privado com token somente leitura guardado no servidor, fora do git) ou **pasta Git local** do servidor. Só leitura. Tela **Projetos** (cartões: commits em 7 dias, último commit, PRs, status Ativo/Devagar/Parado; detalhe: últimos commits, quem trabalhou, PRs com "criar tarefa", "Resumir com o Ayran"), Home mostra os projetos reais e o **resumo do dia usa os commits de ontem**. API `/api/projects` (conectar/remover/token só administrador; cache de 5 min). Projeto conectado: `ayran` (local)
+- [ ] Atividade por pessoa entre todos os projetos, alerta de PR parado e projeto parado, associar autor do Git a funcionário

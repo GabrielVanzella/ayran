@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight, Briefcase, FolderKanban, TrendingUp, Users } from 'lucide-react'
-import { AuthError, getInsights, type Insights } from '../lib/api'
+import { AuthError, agoIso, getInsights, type Insights } from '../lib/api'
+import { useProjectOverviews } from '../lib/useProjects'
 import { ExampleTag } from './ui'
 
-function Head({ icon: Icon, title, onMore }: { icon: typeof Users; title: string; onMore: () => void }) {
+function Head({ icon: Icon, title, onMore, example = true }: { icon: typeof Users; title: string; onMore: () => void; example?: boolean }) {
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
       <Icon className="size-4 text-dim" />
       <h2 className="font-medium">{title}</h2>
-      <ExampleTag text="Exemplo" />
+      {example && <ExampleTag text="Exemplo" />}
       <button onClick={onMore} className="ml-auto flex items-center gap-1 text-xs text-dim transition hover:text-ink">
         ver tudo <ArrowRight className="size-3" />
       </button>
@@ -70,7 +71,30 @@ const PROJECTS = [
   { name: 'Site da VZ', owner: 'Douglas', progress: 35, status: 'Atenção' },
 ]
 
-export function ProjectsCard({ onMore }: { onMore: () => void }) {
+export function ProjectsCard({ onMore, onAuthError }: { onMore: () => void; onAuthError: () => void }) {
+  const real = useProjectOverviews(4, onAuthError)
+  if (real && real.length > 0) {
+    const max = Math.max(1, ...real.map((p) => p.commits_7d))
+    return (
+      <section className="glass rounded-[28px] p-5" aria-label="Projetos">
+        <Head icon={FolderKanban} title="Projetos" onMore={onMore} example={false} />
+        <ul className="space-y-3">
+          {real.map((p) => (
+            <li key={p.id}>
+              <p className="flex items-baseline justify-between gap-2 text-sm">
+                <span className="min-w-0 truncate">{p.name}</span>
+                <span className={`shrink-0 text-[11px] ${p.status === 'parado' ? 'text-red-300' : p.status === 'morno' ? 'text-amber-200' : 'text-dim'}`}>{agoIso(p.last_commit)}</span>
+              </p>
+              <span className="mt-1 flex items-center gap-2">
+                <Meter value={(p.commits_7d / max) * 100} label={`${p.name}: ${p.commits_7d} commits em 7 dias`} />
+                <span className="w-20 text-right text-xs tabular-nums text-dim">{p.commits_7d} commits</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
   return (
     <section className="glass rounded-[28px] p-5" aria-label="Projetos">
       <Head icon={FolderKanban} title="Projetos" onMore={onMore} />
