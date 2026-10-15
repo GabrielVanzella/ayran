@@ -338,3 +338,8 @@ Visão: o Ayran como **IA de empresa**, escalável e personalizada por cliente, 
 
 Integrações-alvo por área: Microsoft 365 e Google Workspace; Slack, Teams, WhatsApp Business API; ERP (TOTVS, SAP, Senior, Sankhya, NetSuite, Omie, Bling, Conta Azul); CRM (Salesforce, HubSpot, Pipedrive, RD Station); Jira/GitHub/GitLab/Azure DevOps/Notion; Zendesk/Freshdesk/Movidesk; Power BI/Metabase/BigQuery e bancos SQL; NF-e (Focus NFe, eNotas); RH (Gupy, Convenia, Pontomais).
 Modelo de entrega: **uma instalação isolada por cliente** (começar assim); SaaS multi-tenant só depois. Para escalar: GPU de 24 GB+ ou híbrido (dados na empresa, modelo grande via API quando o cliente autorizar).
+
+### Protótipo como vitrine (15/10)
+- [x] Tela **Recursos**: catálogo com 6 recursos ativos, 15 em **prévia** (telas de demonstração com dados de exemplo, sempre marcadas) e 4 planejados; filtro por área (Pessoal, Empresa, Pequeno comércio). Prévias: e-mail inteligente, verificador de golpes, agenda, comandos por voz, inteligência de negócio, integrações, redes sociais, Git, auditoria, modo oficina, modo loja, saúde/relógio, bancos/investimentos, carro, app no celular — `hub/frontend/src/components/demos.tsx`, `Showcase.tsx`
+- [x] **Música (Spotify) retirada do app por enquanto** (pedido do Gabriel); `Music.tsx` e `Player.tsx` ficam no repositório, sem uso, para voltar depois
+- Regra: toda demonstração deve dizer que usa dados de exemplo; quando uma função virar real, sai de `demos.tsx` e ganha tela própria

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Home as HomeIcon, Lightbulb, ListTodo, LogOut, MessageSquare, Music2, Newspaper, Palette, Search, Settings2, Users } from 'lucide-react'
+import { Home as HomeIcon, Lightbulb, ListTodo, LogOut, MessageSquare, Newspaper, Palette, Search, Settings2, Sparkles, Users } from 'lucide-react'
 import Account from './components/Account'
 import Tasks from './components/Tasks'
 import Team from './components/Team'
@@ -9,8 +9,7 @@ import Home from './components/Home'
 import Chat from './components/Chat'
 import News from './components/News'
 import Ideas from './components/Ideas'
-import Music from './components/Music'
-import Player from './components/Player'
+import Showcase from './components/Showcase'
 import Orb from './components/Orb'
 import Backdrop from './components/Backdrop'
 import {
@@ -34,7 +33,7 @@ import {
 } from './lib/api'
 import { loadPinnedScene, savePinnedScene, sceneByClock, sceneFromUrl } from './lib/weather'
 
-export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'tasks' | 'music' | 'team'
+export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'tasks' | 'recursos' | 'team'
 
 const NAV: { id: Tab; label: string; icon: typeof HomeIcon; adminOnly?: boolean }[] = [
   { id: 'home', label: 'Início', icon: HomeIcon },
@@ -43,7 +42,7 @@ const NAV: { id: Tab; label: string; icon: typeof HomeIcon; adminOnly?: boolean 
   { id: 'news', label: 'Notícias', icon: Newspaper },
   { id: 'ideas', label: 'Ideias', icon: Lightbulb },
   { id: 'tasks', label: 'Tarefas', icon: ListTodo },
-  { id: 'music', label: 'Música', icon: Music2 },
+  { id: 'recursos', label: 'Recursos', icon: Sparkles },
   { id: 'team', label: 'Equipe', icon: Users, adminOnly: true },
 ]
 
@@ -54,7 +53,7 @@ const TITLES: Record<Tab, string> = {
   news: 'Notícias',
   ideas: 'Ideias',
   tasks: 'Tarefas',
-  music: 'Música',
+  recursos: 'Recursos',
   team: 'Equipe',
 }
 
@@ -141,11 +140,6 @@ export default function App() {
     setTab('chat')
   }, [])
   const consumed = useCallback(() => setPendingPrompt(null), [])
-
-  async function changeMusic(url: string) {
-    setSettings((s) => (s ? { ...s, spotify: url } : s))
-    await putSettings({ spotify: url }).catch(() => {})
-  }
 
   async function changeLocation(location: Location) {
     pin(null) // nova cidade: o fundo volta a seguir o clima sozinho
@@ -368,18 +362,10 @@ export default function App() {
               {tab === 'news' && <News onAuthError={logout} />}
               {tab === 'ideas' && <Ideas onAuthError={logout} onDevelop={ask} onGo={setTab} />}
               {tab === 'tasks' && <Tasks onAuthError={logout} />}
-              {tab === 'music' && settings && <Music current={settings.spotify} onChange={changeMusic} />}
+              {tab === 'recursos' && <Showcase onGo={setTab} isAdmin={isAdmin} />}
               {tab === 'team' && isAdmin && <Team onAuthError={logout} />}
             </main>
           </div>
-
-          {settings?.spotify && (
-            <div className="px-0 pt-3 sm:px-14">
-              <div className="overflow-hidden rounded-3xl border border-white/15 shadow-2xl shadow-black/50">
-                <Player url={settings.spotify} />
-              </div>
-            </div>
-          )}
 
           {/* navegacao inferior (celular) */}
           <nav className="glass-pill mt-2 flex rounded-3xl pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Navegação">
