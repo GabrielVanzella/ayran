@@ -333,5 +333,8 @@ Visão: o Ayran como **IA de empresa**, escalável e personalizada por cliente, 
 
 11. [ ] **Inteligência de negócio** (visão de empresa, 15/10): com os sistemas conectados, o Ayran cruza os dados e dá dicas e pontos de atenção, identifica padrões (vendas, suporte, financeiro), apoia departamentos (vendas, financeiro, atendimento, RH, TI) e estratégia, com resumo diário e alertas por pessoa/departamento; melhora com o uso via memória longa, RAG e feedback (👍/👎) — o modelo não se altera sozinho; começar por 1 área e 1–2 sistemas (ex.: vendas com CRM e e-mail) e medir a utilidade dos avisos
 
+12. [ ] **Dois temas visuais** (15/10): o atual (escuro, cenas do clima) e um segundo a partir de referências que o Gabriel vai enviar; mesmos dados e funções, só muda a camada visual (tokens de cor/fonte/fundo trocáveis), seletor no app; depois tema por cliente (logo, cores)
+13. [ ] **Mercado-alvo**: do pequeno comércio (lojistas, lojas físicas, oficinas mecânicas, prestadores) à média empresa; voz, linguagem simples, WhatsApp e celular; segurança como diferencial. Em aberto: pequeno comércio hospedado e gerenciado pela VZ vs instalação local
+
 Integrações-alvo por área: Microsoft 365 e Google Workspace; Slack, Teams, WhatsApp Business API; ERP (TOTVS, SAP, Senior, Sankhya, NetSuite, Omie, Bling, Conta Azul); CRM (Salesforce, HubSpot, Pipedrive, RD Station); Jira/GitHub/GitLab/Azure DevOps/Notion; Zendesk/Freshdesk/Movidesk; Power BI/Metabase/BigQuery e bancos SQL; NF-e (Focus NFe, eNotas); RH (Gupy, Convenia, Pontomais).
 Modelo de entrega: **uma instalação isolada por cliente** (começar assim); SaaS multi-tenant só depois. Para escalar: GPU de 24 GB+ ou híbrido (dados na empresa, modelo grande via API quando o cliente autorizar).
