@@ -39,6 +39,8 @@ import {
 import { SCENES, weatherIcon, weekday } from '../lib/weather'
 import type { Tab } from '../App'
 
+export type HomeProps = Props
+
 type Props = {
   userName: string
   online: boolean
