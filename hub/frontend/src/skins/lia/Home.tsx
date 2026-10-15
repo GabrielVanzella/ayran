@@ -8,7 +8,7 @@ import type { HomeProps } from '../../components/Home'
 import type { Pin } from '../../lib/weather'
 import { useSceneCredit } from '../../lib/credits'
 import { EXTRA_SCENES, SCENES, sceneUrl, weatherIcon } from '../../lib/weather'
-import { useBrand } from '../../lib/brand'
+import { heroStyle, useBrand } from '../../lib/brand'
 import BrandMark from '../../components/BrandMark'
 import { AttentionTile, KpiStrip, NewsTile, ProjectRings, ShieldTile, TeamTile } from './tiles'
 
@@ -39,7 +39,7 @@ export default function LiaHome(p: HomeProps) {
         <section
           aria-label="Painel principal"
           className="relative min-h-[360px] overflow-hidden rounded-[32px] border border-white/90 bg-cover bg-center shadow-[0_30px_70px_-34px_rgba(67,56,202,0.5)] lg:col-span-8"
-          style={{ backgroundImage: `url(${sceneUrl(p.scene)})` }}
+          style={{ backgroundImage: `url(${sceneUrl(p.scene)})`, ...(p.scene === 'custom' ? heroStyle(brand) : {}) }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-[#f3f6fc]/90 via-[#f3f6fc]/45 to-transparent" aria-hidden />
           <div className="relative flex h-full min-h-[360px] flex-col justify-between gap-6 p-5 sm:p-7">

@@ -14,7 +14,8 @@ from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
-DEFAULTS = {"name": "VZ Tecnologia", "site": "vztecnologia.com.br", "hero_default": "escritorio"}
+DEFAULTS = {"name": "VZ Tecnologia", "site": "vztecnologia.com.br", "hero_default": "escritorio", "hero_focus": "center", "hero_zoom": 100}
+FOCUS_CHOICES = ("left", "center", "right")
 HERO_CHOICES = ("escritorio", "custom", "auto")
 MAX_UPLOAD = 8 * 1024 * 1024
 
@@ -23,6 +24,8 @@ class BrandIn(BaseModel):
     name: str = Field(min_length=1, max_length=60)
     site: str = Field(default="", max_length=80)
     hero_default: str = "escritorio"
+    hero_focus: str = "center"  # onde ficam os detalhes importantes da foto (o texto da tela inicial fica a esquerda)
+    hero_zoom: int = Field(default=100, ge=100, le=160)
 
 
 def build_router(current_user, base_dir: Path) -> APIRouter:
@@ -33,7 +36,7 @@ def build_router(current_user, base_dir: Path) -> APIRouter:
 
     def load() -> dict:
         try:
-            return {**DEFAULTS, **json.loads(conf.read_text(encoding="utf-8"))}
+            return {**DEFAULTS, **json.loads(conf.read_text(encoding="utf-8-sig"))}
         except (OSError, ValueError):
             return dict(DEFAULTS)
 
@@ -60,7 +63,12 @@ def build_router(current_user, base_dir: Path) -> APIRouter:
             raise HTTPException(422, "Imagem padrão inválida")
         if body.hero_default == "custom" and not (folder / "hero.jpg").exists():
             raise HTTPException(422, "Envie a imagem antes de torná-la padrão")
-        conf.write_text(json.dumps({"name": body.name.strip(), "site": body.site.strip(), "hero_default": body.hero_default}, ensure_ascii=False), encoding="utf-8")
+        if body.hero_focus not in FOCUS_CHOICES:
+            raise HTTPException(422, "Enquadramento inválido")
+        conf.write_text(
+            json.dumps({"name": body.name.strip(), "site": body.site.strip(), "hero_default": body.hero_default, "hero_focus": body.hero_focus, "hero_zoom": body.hero_zoom}, ensure_ascii=False),
+            encoding="utf-8",
+        )
         return payload()
 
     def read_image(data: bytes) -> Image.Image:

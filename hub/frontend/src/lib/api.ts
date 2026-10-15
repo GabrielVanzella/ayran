@@ -502,13 +502,15 @@ export type Brand = {
   name: string
   site: string
   hero_default: 'escritorio' | 'custom' | 'auto'
+  hero_focus: 'left' | 'center' | 'right'
+  hero_zoom: number
   has_hero: boolean
   has_logo: boolean
   hero_v: number
   logo_v: number
 }
 export const getBrand = () => request<Brand>('/api/brand')
-export const saveBrand = (b: { name: string; site: string; hero_default: string }) =>
+export const saveBrand = (b: { name: string; site: string; hero_default: string; hero_focus: string; hero_zoom: number }) =>
   request<Brand>('/api/brand', { method: 'PUT', body: JSON.stringify(b) })
 export const deleteBrandImage = (kind: 'hero' | 'logo') => request<Brand>(`/api/brand/${kind}`, { method: 'DELETE' })
 export async function uploadBrandImage(kind: 'hero' | 'logo', file: File): Promise<Brand> {

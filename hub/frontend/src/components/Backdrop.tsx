@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Scene } from '../lib/api'
 import { sceneUrl } from '../lib/weather'
+import { heroStyle, useBrand } from '../lib/brand'
 
 type Layer = { scene: Scene; src: string; key: number }
 
@@ -11,6 +12,7 @@ type Layer = { scene: Scene; src: string; key: number }
  */
 export default function Backdrop({ scene, imageUrl, soft = false }: { scene: Scene; imageUrl?: string | null; soft?: boolean }) {
   const src = imageUrl ?? sceneUrl(scene)
+  const brand = useBrand()
   const [layers, setLayers] = useState<Layer[]>([{ scene, src, key: 0 }])
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export default function Backdrop({ scene, imageUrl, soft = false }: { scene: Sce
           key={l.key}
           data-scene={l.scene}
           className={`scene-layer ${soft ? 'soft' : ''}`}
-          style={{ backgroundImage: `url(${l.src}), var(--scene-fallback)` }}
+          style={{ backgroundImage: `url(${l.src}), var(--scene-fallback)`, ...(l.scene === 'custom' ? heroStyle(brand) : {}) }}
         />
       ))}
       <div className={`scene-veil ${soft ? 'soft' : ''} ${scene === 'escritorio' || scene === 'custom' ? 'busy' : ''}`} />

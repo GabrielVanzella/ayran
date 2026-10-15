@@ -18,7 +18,7 @@ export default function AyranShell({ scene, tab, title, nav, onTab, user, query,
               <Orb size={30} />
               <span className="hidden text-lg font-semibold tracking-wide sm:inline">Ayran</span>
               <span className="mx-1 hidden h-6 w-px bg-white/25 lg:block" aria-hidden />
-              <BrandMark className="hidden text-white/85 lg:block" height={24} />
+              <BrandMark className="hidden text-white/85 lg:inline-flex" height={22} plate />
             </div>
 
             <form

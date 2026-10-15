@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { ImagePlus, Trash2 } from 'lucide-react'
 import { AuthError, deleteBrandImage, saveBrand, uploadBrandImage, type Brand } from '../lib/api'
-import { logoUrl, setBrand, useBrand } from '../lib/brand'
+import { heroStyle, logoUrl, setBrand, useBrand } from '../lib/brand'
 import { sceneUrl } from '../lib/weather'
 import { ErrorLine } from './ui'
 
@@ -11,6 +11,8 @@ export default function BrandSettings({ onAuthError }: { onAuthError: () => void
   const [name, setName] = useState(brand.name)
   const [site, setSite] = useState(brand.site)
   const [hero, setHero] = useState<Brand['hero_default']>(brand.hero_default)
+  const [focus, setFocus] = useState<Brand['hero_focus']>(brand.hero_focus)
+  const [zoom, setZoom] = useState(brand.hero_zoom)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
@@ -25,6 +27,8 @@ export default function BrandSettings({ onAuthError }: { onAuthError: () => void
       const b = await fn()
       setBrand(b)
       setHero(b.hero_default)
+      setFocus(b.hero_focus)
+      setZoom(b.hero_zoom)
       setNote(ok)
     } catch (e) {
       if (e instanceof AuthError) return onAuthError()
@@ -65,9 +69,30 @@ export default function BrandSettings({ onAuthError }: { onAuthError: () => void
               <option value="auto">Seguir o clima</option>
             </select>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="brand-focus" className="mb-1 block text-xs text-dim">Enquadramento da imagem</label>
+              <select id="brand-focus" value={focus} onChange={(e) => setFocus(e.target.value as Brand['hero_focus'])} className="field">
+                <option value="left">Detalhes à esquerda</option>
+                <option value="center">Centralizada</option>
+                <option value="right">Detalhes à direita</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="brand-zoom" className="mb-1 block text-xs text-dim">Zoom</label>
+              <select id="brand-zoom" value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="field">
+                {[100, 115, 125, 140, 160].map((z) => (
+                  <option key={z} value={z}>
+                    {z}%
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="-mt-1 text-xs text-dim">O texto da tela inicial fica à esquerda. Se a imagem tem um logo ou detalhe ali, escolha "Detalhes à direita" e aumente o zoom.</p>
           <button
             disabled={busy || !name.trim()}
-            onClick={() => run(() => saveBrand({ name, site, hero_default: hero }), 'Identidade salva.')}
+            onClick={() => run(() => saveBrand({ name, site, hero_default: hero, hero_focus: focus, hero_zoom: zoom }), 'Identidade salva.')}
             className="rounded-full bg-white px-5 py-2 text-sm font-medium text-void hover:bg-white/90 disabled:opacity-40"
           >
             Salvar
@@ -98,7 +123,7 @@ export default function BrandSettings({ onAuthError }: { onAuthError: () => void
             <div className="flex items-center gap-3">
               <span
                 className="block h-14 w-40 rounded-2xl border border-white/15 bg-cover bg-center"
-                style={{ backgroundImage: `url(${brand.has_hero ? sceneUrl('custom') : sceneUrl('escritorio')})` }}
+                style={{ backgroundImage: `url(${brand.has_hero ? sceneUrl('custom') : sceneUrl('escritorio')})`, ...(brand.has_hero ? heroStyle({ ...brand, hero_focus: focus, hero_zoom: zoom }) : {}) }}
                 role="img"
                 aria-label="Prévia da imagem principal"
               />
