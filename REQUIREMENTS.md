@@ -343,3 +343,13 @@ Modelo de entrega: **uma instalação isolada por cliente** (começar assim); Sa
 - [x] Tela **Recursos**: catálogo com 6 recursos ativos, 15 em **prévia** (telas de demonstração com dados de exemplo, sempre marcadas) e 4 planejados; filtro por área (Pessoal, Empresa, Pequeno comércio). Prévias: e-mail inteligente, verificador de golpes, agenda, comandos por voz, inteligência de negócio, integrações, redes sociais, Git, auditoria, modo oficina, modo loja, saúde/relógio, bancos/investimentos, carro, app no celular — `hub/frontend/src/components/demos.tsx`, `Showcase.tsx`
 - [x] **Música (Spotify) retirada do app por enquanto** (pedido do Gabriel); `Music.tsx` e `Player.tsx` ficam no repositório, sem uso, para voltar depois
 - Regra: toda demonstração deve dizer que usa dados de exemplo; quando uma função virar real, sai de `demos.tsx` e ganha tela própria
+
+### Protótipo integrado e duas interfaces (15/10)
+- [x] **E-mail integrado** (caixa de exemplo + **analisador de golpes real** `scam.py`: SPF/DKIM/DMARC, remetente×resposta, domínio parecido, link×texto, anexos, linguagem) e tela "Analisar um e-mail" (cole o texto)
+- [x] **Agenda real** (compromissos por usuário, conflitos, "mover para depois"); **Negócio** (indicadores de exemplo + sinais reais de tarefas/e-mail/agenda); **Resumo do dia** para o diretor com leitura em voz; **Central de notificações** (sino + aviso flutuante); **voz na Home**; e-mail novo "chega" na demonstração
+- [x] Home sem infraestrutura (servidor/serviços/conversas saíram); no lugar, indicadores, projetos e equipe da empresa (exemplo)
+- [x] **Fotos reais de clima** (Wikimedia Commons, com crédito de autor e licença) no lugar das imagens geradas por IA; vista da cidade por IA desligada (`USE_AI_CITY_VIEW`); `server/fetch-scene-photos.py` refaz a busca
+- [x] **Duas interfaces independentes** (estrutura própria, não só cor): **Ayran** (escura, imersiva) e **Lia** (clara, painel em blocos, dock, Ctrl+K), com seletor; registro em `skins/` para criar modelos novos e, depois, um por cliente
+- [ ] **Lia: seguir a referência visual do Gabriel** (a imagem enviada em 15/10 era a tela escura atual, não a clara; aguardando a referência da interface clara)
+- [ ] Guardar a interface escolhida por usuário no servidor e permitir **padrão por empresa**
+- [x] Documentação UML em [docs/UML.md](docs/UML.md)
