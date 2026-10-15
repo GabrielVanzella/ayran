@@ -408,3 +408,88 @@ export async function synthesizeSpeech(text: string, voice: string, speed: numbe
   })
   return res.blob()
 }
+
+// ---------- e-mail, agenda e negocio ----------
+
+export type Verdict = 'ok' | 'warn' | 'bad'
+export type ScamAnalysis = {
+  verdict: Verdict
+  label: string
+  score: number
+  reasons: string[]
+  positives: string[]
+  action: string
+  from: string
+  subject: string
+}
+export type Mail = {
+  id: string
+  from_addr: string
+  from_name: string
+  subject: string
+  body: string
+  received_at: number
+  read: boolean
+  verdict: Verdict
+  score: number
+  analysis: ScamAnalysis | null
+  demo: boolean
+}
+export const listMail = () => request<Mail[]>('/api/mail')
+export const simulateMail = () => request<Mail>('/api/mail/simulate', { method: 'POST', body: '{}' })
+export const markMailRead = (id: string) => request(`/api/mail/${id}/read`, { method: 'POST', body: '{}' })
+export const deleteMail = (id: string) => request(`/api/mail/${id}`, { method: 'DELETE' })
+export const analyzeEmail = (text: string) => request<ScamAnalysis>('/api/scam/analyze', { method: 'POST', body: JSON.stringify({ text }) })
+
+export type AgendaEvent = {
+  id: string
+  title: string
+  start: string // YYYY-MM-DDTHH:mm, horario local
+  end: string
+  place: string
+  notes: string
+  demo: boolean
+  conflicts: string[]
+}
+export type EventInput = { title: string; start: string; end: string; place?: string; notes?: string }
+export const listAgenda = (start?: string, days = 14) =>
+  request<AgendaEvent[]>(`/api/agenda?days=${days}${start ? `&start=${start}` : ''}`)
+export const createEvent = (e: EventInput) => request<AgendaEvent>('/api/agenda', { method: 'POST', body: JSON.stringify(e) })
+export const updateEvent = (id: string, e: Partial<EventInput>) =>
+  request<AgendaEvent>(`/api/agenda/${id}`, { method: 'PATCH', body: JSON.stringify(e) })
+export const deleteEvent = (id: string) => request(`/api/agenda/${id}`, { method: 'DELETE' })
+
+export type InsightAction =
+  | { kind: 'go'; tab: string; label: string }
+  | { kind: 'ask'; label: string; prompt: string }
+  | { kind: 'task'; label: string; title: string }
+export type Insight = { id: string; tone: 'bad' | 'warn' | 'info'; source: 'real' | 'exemplo'; title: string; body: string; action?: InsightAction }
+export type Insights = {
+  items: Insight[]
+  kpis: { label: string; value: string; delta: string; source: string }[]
+  weekly_sales: { label: string; value: number }[]
+}
+export const getInsights = () => request<Insights>('/api/insights')
+
+// ---------- resumo do dia e notificacoes ----------
+
+export type BriefingItem = { text: string; tone?: 'bad' | 'warn'; progress?: number; delta?: string }
+export type Briefing = {
+  greeting: string
+  sections: { id: string; title: string; source: 'real' | 'exemplo'; items: BriefingItem[] }[]
+  speak: string
+  generated_at: number
+}
+export const getBriefing = () => request<Briefing>('/api/briefing')
+
+export type AppNotification = {
+  id: string
+  kind: 'mail' | 'tasks' | 'agenda' | 'briefing' | 'business' | 'dev'
+  tone: 'bad' | 'warn' | 'info'
+  source: 'real' | 'exemplo'
+  title: string
+  body: string
+  ts: number
+  target: { tab: string; id?: string }
+}
+export const listNotifications = () => request<{ items: AppNotification[] }>('/api/notifications').then((r) => r.items)

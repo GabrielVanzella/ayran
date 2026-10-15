@@ -32,6 +32,7 @@ from feeds import TOPICS
 from account import build_router as build_account_router
 from cityscenes import build_router as build_city_router
 from media import build_router as build_media_router, init_media_db
+from office import build_router as build_office_router, init_office_db
 from system import build_router as build_system_router
 from team import build_router as build_team_router
 from voice import build_router as build_voice_router
@@ -75,6 +76,7 @@ def init_db():
             """
         )
         init_media_db(conn)
+        init_office_db(conn)
         if "idea_id" not in [r[1] for r in conn.execute("pragma table_info(tasks)")]:
             conn.execute("alter table tasks add column idea_id text")  # tarefa criada a partir de uma ideia
 
@@ -200,9 +202,17 @@ def forget_user(user_id: str):
             _auth_cache.pop(token, None)
 
 
-app.include_router(build_team_router(current_user, forget_user))
+def purge_user_data(user_id: str):
+    """Conta EXCLUIDA: apaga os dados dela (tarefas, ideias, e-mails, agenda) em vez de deixar orfaos. Nao usar ao suspender."""
+    with db() as conn:
+        for table in ("tasks", "ideas", "settings", "mails", "events", "office_seed"):
+            conn.execute(f"delete from {table} where user_id = ?", (user_id,))
+
+
+app.include_router(build_team_router(current_user, forget_user, purge_user_data))
 app.include_router(build_account_router(current_user))
 app.include_router(build_voice_router(current_user))
+app.include_router(build_office_router(db, current_user))
 
 
 # ---------------- login automatico (so no proprio servidor) ----------------

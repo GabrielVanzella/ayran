@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Home as HomeIcon, Lightbulb, ListTodo, LogOut, MessageSquare, Newspaper, Palette, Search, Settings2, Sparkles, Users } from 'lucide-react'
+import { CalendarDays, Home as HomeIcon, Lightbulb, ListTodo, LogOut, Mail as MailIcon, MessageSquare, Moon, Newspaper, Palette, Search, Settings2, Sparkles, Sun, TrendingUp, Users } from 'lucide-react'
 import Account from './components/Account'
 import Tasks from './components/Tasks'
 import Team from './components/Team'
@@ -10,6 +10,11 @@ import Chat from './components/Chat'
 import News from './components/News'
 import Ideas from './components/Ideas'
 import Showcase from './components/Showcase'
+import Mail from './components/Mail'
+import Agenda from './components/Agenda'
+import Business from './components/Business'
+import NotificationBell from './components/NotificationBell'
+import { applyTheme, loadTheme, type Theme } from './lib/theme'
 import Orb from './components/Orb'
 import Backdrop from './components/Backdrop'
 import {
@@ -33,7 +38,7 @@ import {
 } from './lib/api'
 import { loadPinnedScene, savePinnedScene, sceneByClock, sceneFromUrl } from './lib/weather'
 
-export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'tasks' | 'recursos' | 'team'
+export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'tasks' | 'mail' | 'agenda' | 'business' | 'recursos' | 'team'
 
 const NAV: { id: Tab; label: string; icon: typeof HomeIcon; adminOnly?: boolean }[] = [
   { id: 'home', label: 'Início', icon: HomeIcon },
@@ -42,6 +47,9 @@ const NAV: { id: Tab; label: string; icon: typeof HomeIcon; adminOnly?: boolean 
   { id: 'news', label: 'Notícias', icon: Newspaper },
   { id: 'ideas', label: 'Ideias', icon: Lightbulb },
   { id: 'tasks', label: 'Tarefas', icon: ListTodo },
+  { id: 'mail', label: 'E-mail', icon: MailIcon },
+  { id: 'agenda', label: 'Agenda', icon: CalendarDays },
+  { id: 'business', label: 'Negócio', icon: TrendingUp },
   { id: 'recursos', label: 'Recursos', icon: Sparkles },
   { id: 'team', label: 'Equipe', icon: Users, adminOnly: true },
 ]
@@ -53,9 +61,15 @@ const TITLES: Record<Tab, string> = {
   news: 'Notícias',
   ideas: 'Ideias',
   tasks: 'Tarefas',
+  mail: 'E-mail',
+  agenda: 'Agenda',
+  business: 'Negócio',
   recursos: 'Recursos',
   team: 'Equipe',
 }
+
+// A vista da cidade gerada por IA foi trocada por fotos reais de clima (Wikimedia Commons). Ligue de novo para gerar por cidade.
+const USE_AI_CITY_VIEW = false
 
 // O painel avancado (Open WebUI) so e alcancavel no proprio servidor, nunca pelo dominio publico.
 const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname)
@@ -77,6 +91,9 @@ export default function App() {
   const [pinned, setPinned] = useState<Scene | null>(loadPinnedScene)
   const [query, setQuery] = useState('')
   const [accountOpen, setAccountOpen] = useState(false)
+  const [mailFocus, setMailFocus] = useState<string | null>(null)
+  const [voiceTick, setVoiceTick] = useState(0)
+  const [theme, setTheme] = useState<Theme>(loadTheme)
 
   const logout = useCallback(() => {
     setToken(null)
@@ -140,6 +157,23 @@ export default function App() {
     setTab('chat')
   }, [])
   const consumed = useCallback(() => setPendingPrompt(null), [])
+  const openVoice = useCallback(() => {
+    setTab('chat')
+    setVoiceTick((n) => n + 1)
+  }, [])
+  const openMail = useCallback((id: string | null) => {
+    setMailFocus(id)
+    setTab('mail')
+  }, [])
+  const openTarget = useCallback(
+    (t: { tab: string; id?: string }) => (t.tab === 'mail' ? openMail(t.id ?? null) : setTab((NAV.some((n) => n.id === t.tab) ? t.tab : 'home') as Tab)),
+    [openMail],
+  )
+  function toggleTheme() {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    applyTheme(next)
+  }
 
   async function changeLocation(location: Location) {
     pin(null) // nova cidade: o fundo volta a seguir o clima sozinho
@@ -173,7 +207,7 @@ export default function App() {
   const [cityState, setCityState] = useState<'idle' | 'generating' | 'ready'>('idle')
   const [cityTick, setCityTick] = useState(0)
   useEffect(() => {
-    if (!user || lat == null || lon == null) {
+    if (!USE_AI_CITY_VIEW || !user || lat == null || lon == null) {
       setCityImage(null)
       setCityState('idle')
       return
@@ -275,6 +309,15 @@ export default function App() {
               />
             </form>
 
+            <NotificationBell onAuthError={logout} onOpen={openTarget} />
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'}
+              aria-label={theme === 'dark' ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'}
+              className="glass-pill grid size-11 shrink-0 place-items-center rounded-full transition hover:bg-white/10"
+            >
+              {theme === 'dark' ? <Sun className="size-5" /> : <Moon className="size-5" />}
+            </button>
             <button
               onClick={() => setAccountOpen(true)}
               title="Minha conta"
@@ -293,7 +336,7 @@ export default function App() {
           <div className="flex min-h-0 flex-1 gap-2 pt-4 sm:gap-5">
             {/* navegacao lateral em capsula (desktop) */}
             <nav className="hidden shrink-0 flex-col items-center justify-between py-1 md:flex" aria-label="Navegação">
-              <div className="glass-pill flex flex-col gap-2 rounded-full p-2">
+              <div className="glass-pill scroll-thin flex min-h-0 flex-col gap-2 overflow-y-auto rounded-full p-2">
                 {nav.map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
@@ -352,29 +395,35 @@ export default function App() {
                   onAsk={ask}
                   onGo={setTab}
                   onAuthError={logout}
+                  isAdmin={isAdmin}
+                  onVoice={openVoice}
+                  onOpenMail={openMail}
                 />
               )}
               {/* o chat fica montado pra resposta continuar chegando mesmo trocando de tela */}
               <div className={tab === 'chat' ? 'h-full' : 'hidden'}>
-                <Chat userName={user.name} pendingPrompt={pendingPrompt} onPromptConsumed={consumed} onAuthError={logout} />
+                <Chat userName={user.name} pendingPrompt={pendingPrompt} onPromptConsumed={consumed} onAuthError={logout} voiceRequest={voiceTick} />
               </div>
               {tab === 'create' && <Create onAuthError={logout} />}
               {tab === 'news' && <News onAuthError={logout} />}
               {tab === 'ideas' && <Ideas onAuthError={logout} onDevelop={ask} onGo={setTab} />}
               {tab === 'tasks' && <Tasks onAuthError={logout} />}
+              {tab === 'mail' && <Mail onAuthError={logout} onAsk={ask} onGo={setTab} focusId={mailFocus} />}
+              {tab === 'agenda' && <Agenda onAuthError={logout} />}
+              {tab === 'business' && <Business onAuthError={logout} onAsk={ask} onGo={setTab} />}
               {tab === 'recursos' && <Showcase onGo={setTab} isAdmin={isAdmin} />}
               {tab === 'team' && isAdmin && <Team onAuthError={logout} />}
             </main>
           </div>
 
           {/* navegacao inferior (celular) */}
-          <nav className="glass-pill mt-2 flex rounded-3xl pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Navegação">
+          <nav className="glass-pill scroll-thin mt-2 flex overflow-x-auto rounded-3xl pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Navegação">
             {nav.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}
                 aria-current={tab === id ? 'page' : undefined}
-                className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] ${tab === id ? 'text-white' : 'text-dim'}`}
+                className={`flex min-w-16 flex-1 flex-col items-center gap-1 py-2.5 text-[11px] ${tab === id ? 'text-white' : 'text-dim'}`}
               >
                 <Icon className="size-5" />
                 {label}

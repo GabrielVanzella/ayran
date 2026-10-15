@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import {
   ArrowRight,
-  Cpu,
+  AudioLines,
+  CalendarDays,
+  ListTodo,
+  Mail,
+  MessageSquare,
+  Mic,
+  Palette,
+  Sparkles,
+  TrendingUp,
+  Users,
   Droplets,
-  Loader2,
-  HardDrive,
   Lightbulb,
   MapPin,
   Newspaper,
@@ -12,23 +19,21 @@ import {
   Umbrella,
   Wind,
 } from 'lucide-react'
-import Dial from './Dial'
 import TasksCard from './TasksCard'
-import CityViewEditor from './CityViewEditor'
+import BriefingCard from './BriefingCard'
+import { AgendaCard, MailCard } from './HomeCards'
+import { CompanyKpis, ProjectsCard, TeamCard } from './HomeCompany'
 import LocationPicker from './LocationPicker'
 import {
+  BASE,
   getNews,
-  getSystem,
-  listChats,
   listIdeas,
   timeAgo,
-  type ChatSummary,
   type DayForecast,
   type Idea,
   type Location,
   type NewsItem,
   type Scene,
-  type SystemInfo,
   type Weather,
 } from '../lib/api'
 import { SCENES, weatherIcon, weekday } from '../lib/weather'
@@ -50,6 +55,9 @@ type Props = {
   onAsk: (prompt: string) => void
   onGo: (tab: Tab) => void
   onAuthError: () => void
+  isAdmin: boolean
+  onVoice: () => void
+  onOpenMail: (id: string) => void
 }
 
 function greeting(h: number) {
@@ -71,29 +79,14 @@ export default function Home(p: Props) {
   const [editingCity, setEditingCity] = useState(false)
   const [news, setNews] = useState<NewsItem[]>([])
   const [ideas, setIdeas] = useState<Idea[]>([])
-  const [chats, setChats] = useState<ChatSummary[]>([])
-  const [system, setSystem] = useState<SystemInfo | null>(null)
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 15_000)
     getNews().then((n) => setNews(n.slice(0, 5))).catch(() => {})
     listIdeas().then((i) => setIdeas(i.filter((x) => x.status !== 'feita').slice(0, 4))).catch(() => {})
-    listChats().then(setChats).catch(() => {})
     return () => clearInterval(t)
   }, [])
 
-  useEffect(() => {
-    let alive = true
-    const load = () => getSystem().then((s) => alive && setSystem(s)).catch(() => {})
-    load()
-    const t = setInterval(load, 10_000)
-    return () => {
-      alive = false
-      clearInterval(t)
-    }
-  }, [])
-
-  const week = useMemo(() => weekActivity(chats), [chats])
   const first = p.userName.split(' ')[0]
 
   return (
@@ -130,17 +123,7 @@ export default function Home(p: Props) {
               </>
             )}
           </button>
-          {p.cityName && p.cityState !== 'idle' && (
-            <p role="status" className="glow-text order-last flex basis-full items-center justify-end gap-2 text-xs text-white/80">
-              {p.cityState === 'generating' ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin" /> O Ayran está criando a vista de {p.cityName}…
-                </>
-              ) : (
-                <>Vista de {p.cityName}, criada pelo Ayran</>
-              )}
-            </p>
-          )}
+          <PhotoCredit scene={p.scene} />
         </div>
 
         <div className="max-w-2xl">
@@ -175,10 +158,25 @@ export default function Home(p: Props) {
               enterKeyHint="send"
               className="min-w-0 flex-1 bg-transparent px-4 py-2 outline-none placeholder:text-white/60"
             />
+            <button
+              type="button"
+              onClick={p.onVoice}
+              title="Conversar por voz"
+              aria-label="Conversar com o Ayran por voz"
+              className="grid size-10 place-items-center rounded-full border border-white/30 transition hover:bg-white/15"
+            >
+              <Mic className="size-4" />
+            </button>
             <button className="grid size-10 place-items-center rounded-full bg-white text-void transition hover:bg-white/90" aria-label="Enviar">
               <Send className="size-4" />
             </button>
           </form>
+          <button
+            onClick={p.onVoice}
+            className="mt-3 flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-void transition hover:bg-white/90"
+          >
+            <AudioLines className="size-4" /> Falar com o Ayran
+          </button>
           <div className="mt-3 flex flex-wrap gap-2">
             {QUICK.map((q) => (
               <button
@@ -193,7 +191,35 @@ export default function Home(p: Props) {
         </div>
       </section>
 
+      {/* ---------- acesso rapido a tudo ---------- */}
+      <nav aria-label="Acesso rápido" className="mb-4">
+        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11">
+          {SHORTCUTS.filter((x) => !x.admin || p.isAdmin).map(({ label, icon: Icon, tab, voice }) => (
+            <li key={label}>
+              <button
+                onClick={() => (voice ? p.onVoice() : p.onGo(tab!))}
+                className="glass-pill flex h-full w-full flex-col items-center gap-1.5 rounded-3xl px-2 py-3 text-xs transition hover:bg-white/10"
+              >
+                <Icon className="size-5" />
+                {label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
       <div className="grid gap-4 lg:grid-cols-12">
+      {/* ---------- resumo do dia, e-mail e agenda ---------- */}
+      <div className="order-1 lg:col-span-12">
+        <BriefingCard onAuthError={p.onAuthError} />
+      </div>
+      <div className="order-1 lg:col-span-6">
+        <MailCard onOpen={p.onOpenMail} onMore={() => p.onGo('mail')} onAuthError={p.onAuthError} />
+      </div>
+      <div className="order-1 lg:col-span-6">
+        <AgendaCard onMore={() => p.onGo('agenda')} onAuthError={p.onAuthError} />
+      </div>
+
       {/* ---------- clima + previsao ---------- */}
       <section id="clima" className="glass order-2 scroll-mt-2 rounded-[28px] p-5 lg:col-span-4 lg:row-span-2">
         {!p.location || editingCity ? (
@@ -213,7 +239,6 @@ export default function Home(p: Props) {
         ) : p.weather ? (
           <>
             <Forecast weather={p.weather} city={p.location.name} onChangeCity={() => setEditingCity(true)} />
-            <CityViewEditor cityName={p.location.name} onSaved={p.onCityChanged} onAuthError={p.onAuthError} />
           </>
         ) : (
           <div className="grid h-full min-h-48 place-items-center text-center text-sm text-dim">
@@ -222,57 +247,12 @@ export default function Home(p: Props) {
         )}
       </section>
 
-      {/* ---------- servidor + servicos + atividade ---------- */}
+      {/* ---------- empresa: indicadores, projetos e equipe ---------- */}
       <div className="order-3 grid gap-4 md:grid-cols-2 lg:col-span-8">
-        <section className="glass rounded-[28px] p-5 md:col-span-1">
-          <header className="mb-2 flex items-center justify-between">
-            <h2 className="font-medium">Servidor</h2>
-            <span className="max-w-[60%] truncate text-xs text-dim">{system?.model ? `modelo: ${system.model}` : 'sem modelo carregado'}</span>
-          </header>
-          <div className="flex flex-col items-center gap-3">
-            {system ? (
-              <>
-                <Dial
-                  value={system.gpu ? (system.gpu.used_mb / system.gpu.total_mb) * 100 : system.ram.percent}
-                  label={system.gpu ? 'VRAM da GPU' : 'Memória RAM'}
-                  caption={system.gpu ? `${(system.gpu.used_mb / 1024).toFixed(1)} de ${(system.gpu.total_mb / 1024).toFixed(0)} GB` : `${system.ram.used_gb} de ${system.ram.total_gb} GB`}
-                />
-                <div className="grid w-full grid-cols-3 gap-2 text-center text-xs">
-                  <Metric icon={Cpu} label="CPU" value={`${Math.round(system.cpu)}%`} />
-                  <Metric icon={HardDrive} label="Disco livre" value={`${system.disk.free_gb} GB`} />
-                  <Metric icon={Cpu} label="RAM" value={`${Math.round(system.ram.percent)}%`} />
-                </div>
-              </>
-            ) : (
-              <div className="grid h-56 place-items-center text-sm text-dim">Lendo o servidor…</div>
-            )}
-          </div>
-        </section>
-
+        <CompanyKpis onMore={() => p.onGo('business')} onAuthError={p.onAuthError} />
         <div className="grid gap-4">
-          <section className="glass rounded-[28px] p-5">
-            <h2 className="mb-3 font-medium">Serviços</h2>
-            <ul className="grid grid-cols-2 gap-2">
-              {(system?.services ?? []).map((s) => (
-                <li key={s.id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className={`size-2 shrink-0 rounded-full ${s.up ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                    <span className="truncate">{s.label}</span>
-                  </div>
-                  <p className="mt-1 truncate text-xs text-dim">{s.up ? s.hint : 'fora do ar'}</p>
-                </li>
-              ))}
-              {!system && <li className="col-span-2 py-6 text-center text-sm text-dim">Verificando…</li>}
-            </ul>
-          </section>
-
-          <section className="glass rounded-[28px] p-5">
-            <header className="mb-3 flex items-baseline justify-between">
-              <h2 className="font-medium">Conversas</h2>
-              <span className="text-xs text-dim">últimos 7 dias</span>
-            </header>
-            <ActivityChart week={week} />
-          </section>
+          <ProjectsCard onMore={() => p.onGo('business')} />
+          <TeamCard onMore={() => p.onGo('business')} />
         </div>
       </div>
 
@@ -320,6 +300,42 @@ export default function Home(p: Props) {
   )
 }
 
+const SHORTCUTS: { label: string; icon: typeof Mic; tab?: Tab; voice?: boolean; admin?: boolean }[] = [
+  { label: 'Falar', icon: AudioLines, voice: true },
+  { label: 'Chat', icon: MessageSquare, tab: 'chat' },
+  { label: 'Criar imagem', icon: Palette, tab: 'create' },
+  { label: 'E-mail', icon: Mail, tab: 'mail' },
+  { label: 'Agenda', icon: CalendarDays, tab: 'agenda' },
+  { label: 'Tarefas', icon: ListTodo, tab: 'tasks' },
+  { label: 'Negócio', icon: TrendingUp, tab: 'business' },
+  { label: 'Ideias', icon: Lightbulb, tab: 'ideas' },
+  { label: 'Notícias', icon: Newspaper, tab: 'news' },
+  { label: 'Recursos', icon: Sparkles, tab: 'recursos' },
+  { label: 'Equipe', icon: Users, tab: 'team', admin: true },
+]
+
+type Credit = { title: string; author: string; license: string; page: string }
+let creditsCache: Promise<Record<string, Credit>> | null = null
+
+/** Credito da foto de fundo (as licencas CC BY / CC BY-SA exigem citar o autor). */
+function PhotoCredit({ scene }: { scene: string }) {
+  const [c, setC] = useState<Credit | null>(null)
+  useEffect(() => {
+    creditsCache ??= fetch(`${BASE}/scenes/credits.json`).then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
+    creditsCache.then((all) => setC(all[scene] ?? null))
+  }, [scene])
+  if (!c) return <span />
+  return (
+    <p className="glow-text order-last basis-full text-right text-[11px] text-white/70">
+      Foto:{' '}
+      <a href={c.page} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-white">
+        {c.author}
+      </a>{' '}
+      · {c.license} · Wikimedia Commons
+    </p>
+  )
+}
+
 function ScenePill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
@@ -342,16 +358,6 @@ function Header({ icon: Icon, title, onMore }: { icon: typeof Newspaper; title: 
       <button onClick={onMore} className="ml-auto flex items-center gap-1 text-xs text-dim transition hover:text-ink">
         ver tudo <ArrowRight className="size-3" />
       </button>
-    </div>
-  )
-}
-
-function Metric({ icon: Icon, label, value }: { icon: typeof Cpu; label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-2">
-      <Icon className="mx-auto mb-1 size-4 text-dim" />
-      <p className="tabular-nums">{value}</p>
-      <p className="text-[11px] text-dim">{label}</p>
     </div>
   )
 }
@@ -421,52 +427,6 @@ function DayRow({ day, first, lo, hi }: { day: DayForecast; first: boolean; lo: 
       </span>
       <span className="tabular-nums">{Math.round(day.max)}°</span>
     </li>
-  )
-}
-
-type Day = { label: string; count: number; today: boolean }
-
-/** Conversas por dia nos ultimos 7 dias, a partir do historico real. */
-function weekActivity(chats: ChatSummary[]): Day[] {
-  const days: Day[] = []
-  const start = new Date()
-  start.setHours(0, 0, 0, 0)
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(start)
-    d.setDate(d.getDate() - i)
-    const next = new Date(d)
-    next.setDate(next.getDate() + 1)
-    const count = chats.filter((c) => c.updated_at * 1000 >= d.getTime() && c.updated_at * 1000 < next.getTime()).length
-    days.push({ label: d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''), count, today: i === 0 })
-  }
-  return days
-}
-
-function ActivityChart({ week }: { week: Day[] }) {
-  const max = Math.max(1, ...week.map((d) => d.count))
-  const total = week.reduce((a, d) => a + d.count, 0)
-  return (
-    <div>
-      <div className="flex h-24 items-end gap-2" role="img" aria-label={`${total} conversas nos últimos 7 dias`}>
-        {week.map((d, i) => (
-          <div key={i} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
-            <span className="text-[10px] tabular-nums text-dim">{d.count || ''}</span>
-            <span
-              className={`w-full rounded-full ${d.today ? 'bg-white' : 'bg-white/30'}`}
-              style={{ height: `${Math.max(6, (d.count / max) * 100)}%`, minHeight: 6 }}
-            />
-          </div>
-        ))}
-      </div>
-      <div className="mt-2 flex gap-2">
-        {week.map((d, i) => (
-          <span key={i} className={`flex-1 text-center text-[11px] capitalize ${d.today ? 'text-ink' : 'text-dim'}`}>
-            {d.label}
-          </span>
-        ))}
-      </div>
-      {total === 0 && <p className="mt-3 text-center text-xs text-dim">Suas conversas com o Ayran aparecem aqui.</p>}
-    </div>
   )
 }
 

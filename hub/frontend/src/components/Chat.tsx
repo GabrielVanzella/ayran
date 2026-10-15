@@ -24,6 +24,7 @@ type Props = {
   pendingPrompt: string | null
   onPromptConsumed: () => void
   onAuthError: () => void
+  voiceRequest?: number // muda quando outra tela pede a conversa por voz
 }
 
 const SUGGESTIONS = [
@@ -46,7 +47,7 @@ function lastBoundary(text: string, from: number): number {
   return from
 }
 
-export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuthError }: Props) {
+export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuthError, voiceRequest = 0 }: Props) {
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [chatId, setChatId] = useState<string | null>(null)
   const [input, setInput] = useState('')
@@ -297,6 +298,17 @@ export default function Chat({ userName, pendingPrompt, onPromptConsumed, onAuth
   }
 
   useEffect(() => () => stopVoice(), [stopVoice])
+
+  // a Home (ou outra tela) pediu para conversar por voz
+  const lastRequest = useRef(voiceRequest)
+  useEffect(() => {
+    if (voiceRequest !== lastRequest.current) {
+      lastRequest.current = voiceRequest
+      if (canListen()) openCall()
+    }
+    // openCall le refs e estados atuais; so reage ao pedido
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceRequest])
 
   const callState: CallState = streaming || processing ? 'thinking' : speaking ? 'speaking' : listening ? 'listening' : 'idle'
 

@@ -42,7 +42,7 @@ def pt(detail: str) -> str:
     return next((msg for key, msg in TRANSLATE if key in low), detail)
 
 
-def build_router(current_user, forget_user) -> APIRouter:
+def build_router(current_user, forget_user, purge_user_data=lambda user_id: None) -> APIRouter:
     """forget_user(id): esquece as sessoes em cache do usuario, pra troca de senha/remocao valer na hora."""
     router = APIRouter(prefix="/api/team")
 
@@ -106,6 +106,7 @@ def build_router(current_user, forget_user) -> APIRouter:
             raise HTTPException(400, "Você não pode remover o seu próprio acesso")
         await owui(request, "DELETE", f"/api/v1/users/{user_id}")
         forget_user(user_id)
+        purge_user_data(user_id)
         return {"ok": True}
 
     return router
