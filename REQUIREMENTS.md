@@ -316,3 +316,20 @@ Itens originais da fase:
 - [ ] **Saúde**: integração com smartwatch (Health Connect / Apple Health), dados só locais
 - [ ] **Bancos e investimentos**: leitura apenas (Open Finance/agregador), credenciais nunca no chat/repositório; sugestões de investimento só informativas, sem recomendação regulada
 - [ ] **Pesquisa de integrações úteis** para a vida e para a empresa (a entregar)
+
+## Fila de desenvolvimento (definida em 15/10) — ordem de execução
+Visão: o Ayran como **IA de empresa**, escalável e personalizada por cliente, rodando em várias empresas.
+
+1. [ ] **Auditoria e controle de equipe** (antes de qualquer conector, pois mais gente já tem acesso): logs de todos na plataforma (somente admin; avisar a equipe — LGPD), suspender/reativar acesso, atribuir tarefas a funcionários, carga por pessoa, dados separados por pessoa
+2. [ ] **Framework de conectores** (padrão **MCP**; n8n para o que não tiver conector), com permissão por pessoa e auditoria
+3. [ ] **E-mail** (piloto dos conectores): Gmail/Google Workspace e Outlook/Microsoft 365 via **OAuth**; começa só leitura (resumo, tarefas, compromissos) → rascunhos aprovados → envio só com confirmação; tokens criptografados no servidor, cada pessoa conecta o seu
+4. [ ] **Verificador de golpes de e-mail**: tela onde se cola o e-mail ou envia `.eml`; checagens técnicas (SPF/DKIM/DMARC, remetente e Reply-To, domínio parecido/recente, link ≠ texto, anexos de risco) + leitura do modelo (urgência, pedido de dinheiro/senha, golpe do CEO/fornecedor, boleto/PIX falso, falsa Receita/NF-e/banco); veredito + motivos + o que fazer. Nunca abre link/anexo sozinho; reputação de links (Safe Browsing/VirusTotal) opcional e desligada por padrão. Depois: análise automática da caixa conectada e relatório de tentativas para empresas
+5. [ ] **Agenda e compromissos**, e **criar tarefas/ideias/compromissos falando com a IA** (tool calling)
+6. [ ] **Perfil de empresa (tenant)**: marca, persona, módulos, conectores, base de conhecimento e modelos vindos de configuração, não do código; **SSO** (Entra ID, Google, Okta)
+7. [ ] **RAG por empresa** (base de conhecimento) e **IA que aprende** (memória longa, 👍/👎 como dataset)
+8. [ ] **Empacotamento (Docker)** para instalar uma instância isolada por cliente com um comando; depois cobrança por uso e canal de atualização
+9. [ ] Git/Projetos, foto real no fundo da Home, redes sociais da VZ, agente de programação próprio (substituir o Cline)
+10. [ ] App no celular (PWA + notificações), integração com o carro e smartwatch/saúde, bancos/Open Finance e sugestões de investimento (informativas)
+
+Integrações-alvo por área: Microsoft 365 e Google Workspace; Slack, Teams, WhatsApp Business API; ERP (TOTVS, SAP, Senior, Sankhya, NetSuite, Omie, Bling, Conta Azul); CRM (Salesforce, HubSpot, Pipedrive, RD Station); Jira/GitHub/GitLab/Azure DevOps/Notion; Zendesk/Freshdesk/Movidesk; Power BI/Metabase/BigQuery e bancos SQL; NF-e (Focus NFe, eNotas); RH (Gupy, Convenia, Pontomais).
+Modelo de entrega: **uma instalação isolada por cliente** (começar assim); SaaS multi-tenant só depois. Para escalar: GPU de 24 GB+ ou híbrido (dados na empresa, modelo grande via API quando o cliente autorizar).
