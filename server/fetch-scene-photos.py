@@ -33,6 +33,14 @@ QUERIES = {
     "neblina": ["fog mist valley morning landscape", "misty forest morning"],
     "noite": ["night sky stars milky way landscape", "starry night mountains"],
     "frio": ["snow covered mountains winter landscape", "frozen lake winter snow"],
+    "escritorio": [
+        "software developers office",
+        "developers bay office",
+        "software company office interior",
+        "IT company office workspace",
+        "programmers desks monitors office",
+        "technology company headquarters interior",
+    ],
 }
 
 
@@ -49,12 +57,12 @@ def search(client: httpx.Client, query: str, category: str, limit: int = 50) -> 
     return list((r.json().get("query", {}).get("pages") or {}).values())
 
 
-def usable(page: dict) -> dict | None:
+def usable(page: dict, min_w: int = 3000) -> dict | None:
     info = (page.get("imageinfo") or [{}])[0]
     meta = info.get("extmetadata", {})
     lic = meta.get("LicenseShortName", {}).get("value", "")
     w, h = info.get("width", 0), info.get("height", 0)
-    if not FREE.match(lic.strip()) or w < 3000 or not h or not (1.35 <= w / h <= 2.3):
+    if not FREE.match(lic.strip()) or w < min_w or not h or not (1.35 <= w / h <= 2.3):
         return None
     if info.get("mime") not in ("image/jpeg",):
         return None
@@ -70,16 +78,18 @@ def usable(page: dict) -> dict | None:
     }
 
 
-def candidates(out: Path, per_scene: int = 9):
+def candidates(out: Path, per_scene: int = 9, only: set[str] | None = None):
     out.mkdir(parents=True, exist_ok=True)
     meta: dict[str, list[dict]] = {}
     with httpx.Client(follow_redirects=True) as client:
         for scene, queries in QUERIES.items():
+            if only and scene not in only:
+                continue
             found: dict[str, dict] = {}
             for category in CATEGORIES:
                 for q in queries:
                     for page in search(client, q, category):
-                        u = usable(page)
+                        u = usable(page, 1800 if scene == "escritorio" else 3000)
                         if u and u["title"] not in found:
                             found[u["title"]] = u
                 if len(found) >= per_scene:
@@ -91,7 +101,8 @@ def candidates(out: Path, per_scene: int = 9):
                 if not path.exists():
                     path.write_bytes(client.get(c["thumb"], headers=UA, timeout=120).content)
             print(scene, len(picks), "candidatas")
-    (out / "candidates.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    old = json.loads((out / "candidates.json").read_text(encoding="utf-8")) if (out / "candidates.json").exists() else {}
+    (out / "candidates.json").write_text(json.dumps({**old, **meta}, ensure_ascii=False, indent=2), encoding="utf-8")
     # folha de contato por cena (3 colunas) para escolher no olho
     for scene, picks in meta.items():
         thumbs = []
@@ -117,7 +128,8 @@ def install(out: Path, choices: dict[str, str]):
     """choices: cena -> 'N' (candidata N da propria cena) ou 'outra:N' (candidata N de outra busca, ex.: chuvaX:1)."""
     meta = json.loads((out / "candidates.json").read_text(encoding="utf-8"))
     ROOT.mkdir(parents=True, exist_ok=True)
-    credits = {}
+    credits_file = ROOT / "credits.json"
+    credits = json.loads(credits_file.read_text(encoding="utf-8")) if credits_file.exists() else {}  # mantem as cenas ja instaladas
     for scene, choice in choices.items():
         src, _, n = choice.rpartition(":")
         src, n = src or scene, int(n)
@@ -128,12 +140,12 @@ def install(out: Path, choices: dict[str, str]):
         im.save(ROOT / f"{scene}.jpg", quality=84, optimize=True, progressive=True)
         credits[scene] = {k: c[k] for k in ("title", "author", "license", "license_url", "page")}
         print("instalada", scene, "<-", c["title"])
-    (ROOT / "credits.json").write_text(json.dumps(credits, ensure_ascii=False, indent=2), encoding="utf-8")
+    credits_file.write_text(json.dumps(credits, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 if __name__ == "__main__":
     cmd, folder = sys.argv[1], Path(sys.argv[2])
     if cmd == "candidates":
-        candidates(folder)
+        candidates(folder, only=set(sys.argv[3:]) or None)
     elif cmd == "install":
         install(folder, dict(a.split("=") for a in sys.argv[3:]))

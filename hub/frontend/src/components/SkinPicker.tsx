@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, LayoutTemplate } from 'lucide-react'
+import { AuthError, resetDemo } from '../lib/api'
 import { SKINS, type SkinId } from '../lib/skin'
+import { setPresenting, usePresenting } from '../lib/present'
 
 /** Escolha da interface: cada modelo tem estrutura propria (nao e so outra cor). */
 export default function SkinPicker({ value, onChange }: { value: SkinId; onChange: (id: SkinId) => void }) {
   const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const presenting = usePresenting()
   const box = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -62,6 +66,32 @@ export default function SkinPicker({ value, onChange }: { value: SkinId; onChang
             ))}
           </ul>
           <p className="px-2 pb-1 pt-3 text-xs text-dim">Os dados são os mesmos; muda o jeito de navegar e de ver. Cada empresa poderá ter o seu modelo.</p>
+          <div className="mt-2 rounded-3xl border border-white/10 p-3">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input type="checkbox" checked={presenting} onChange={(e) => setPresenting(e.target.checked)} className="mt-1 size-4 accent-indigo-500" />
+              <span className="text-sm">
+                Modo apresentação
+                <span className="block text-xs text-dim">Tela limpa para prints e demonstrações: sem avisos que aparecem sozinhos e sem etiquetas. Um selo informa que os dados são fictícios.</span>
+              </span>
+            </label>
+            <button
+              disabled={busy}
+              onClick={async () => {
+                if (!confirm('Restaurar os dados de exemplo (e-mails, agenda e, se você não tiver nenhuma, tarefas)? O que você criou de verdade é mantido.')) return
+                setBusy(true)
+                try {
+                  await resetDemo()
+                  location.reload()
+                } catch (e) {
+                  setBusy(false)
+                  if (e instanceof AuthError) location.reload()
+                }
+              }}
+              className="mt-3 rounded-full bg-white/10 px-4 py-1.5 text-xs hover:bg-white/20 disabled:opacity-50"
+            >
+              {busy ? 'Restaurando…' : 'Restaurar dados de exemplo'}
+            </button>
+          </div>
         </div>
       )}
     </div>

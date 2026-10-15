@@ -36,7 +36,8 @@ import {
   type Scene,
   type Weather,
 } from '../lib/api'
-import { SCENES, weatherIcon, weekday } from '../lib/weather'
+import { EXTRA_SCENES, SCENES, weatherIcon, weekday, type Pin } from '../lib/weather'
+import { useBrand } from '../lib/brand'
 import type { Tab } from '../App'
 
 export type HomeProps = Props
@@ -48,8 +49,8 @@ type Props = {
   cityName: string | null
   cityState: 'idle' | 'generating' | 'ready'
   onCityChanged: () => void
-  pinned: Scene | null
-  onPin: (s: Scene | null) => void
+  pinned: Pin
+  onPin: (s: Pin) => void
   weather: Weather | null
   weatherError: boolean
   location: Location | null
@@ -90,6 +91,7 @@ export default function Home(p: Props) {
   }, [])
 
   const first = p.userName.split(' ')[0]
+  const brand = useBrand()
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -97,10 +99,13 @@ export default function Home(p: Props) {
       <section className="flex min-h-[max(440px,calc(100svh-17rem))] flex-col justify-between gap-10 pb-10">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="scroll-thin -mx-1 flex max-w-full gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Cena de fundo">
-            <ScenePill active={!p.pinned} onClick={() => p.onPin(null)}>
-              Automático
+            <ScenePill active={p.pinned === null} onClick={() => p.onPin(null)}>
+              Padrão
             </ScenePill>
-            {SCENES.map((s) => (
+            <ScenePill active={p.pinned === 'auto'} onClick={() => p.onPin('auto')}>
+              Clima
+            </ScenePill>
+            {[...EXTRA_SCENES.filter((s) => s.id !== 'custom' || brand.has_hero), ...SCENES].map((s) => (
               <ScenePill key={s.id} active={p.pinned === s.id} onClick={() => p.onPin(s.id)}>
                 {s.label}
               </ScenePill>

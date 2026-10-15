@@ -353,3 +353,9 @@ Modelo de entrega: **uma instalação isolada por cliente** (começar assim); Sa
 - [ ] **Lia: seguir a referência visual do Gabriel** (a imagem enviada em 15/10 era a tela escura atual, não a clara; aguardando a referência da interface clara)
 - [ ] Guardar a interface escolhida por usuário no servidor e permitir **padrão por empresa**
 - [x] Documentação UML em [docs/UML.md](docs/UML.md)
+
+### Identidade da empresa e cenário para apresentação (15/10)
+- [x] **Imagem principal = escritório de desenvolvimento** (foto real, Bridge Global, CC BY-SA 4.0) como padrão nas duas interfaces; o clima virou opção. Troca a qualquer momento: "Padrão / Clima / Escritório / Minha imagem / cenas de clima" (Ayran: botões no topo; Lia: seletor "Imagem")
+- [x] **Identidade da empresa** (Equipe → Identidade da empresa, só administrador): nome, site, **logo** e **imagem principal própria** (JPG/PNG/WebP, validadas e redimensionadas); aparecem nas duas interfaces. API: `/api/brand` (GET público; alterar só admin). O logo da VZ ainda precisa ser enviado: o site não é acessível daqui (inspeção de certificado da rede da empresa)
+- [x] **Modo apresentação** (seletor de interface): tela limpa e repetível para prints (sem e-mail chegando sozinho, sem aviso flutuante, sem etiquetas "Exemplo"; selo fixo "Demonstração com dados fictícios") e **Restaurar dados de exemplo** (`/api/demo/reset`; mantém o que foi criado de verdade; se não houver tarefas, entram tarefas de exemplo). URL direta: `?apresentacao=1`
+- [ ] Trocar a foto do escritório por uma imagem profissional da VZ (enviar pela tela de identidade) ou de banco de imagens licenciado

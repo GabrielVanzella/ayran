@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import type { Scene } from './api'
 import { BASE } from './api'
+import { heroUrl } from './brand'
 
 export const SCENES: { id: Scene; label: string }[] = [
   { id: 'praia', label: 'Calor' },
@@ -26,7 +27,16 @@ export const SCENES: { id: Scene; label: string }[] = [
   { id: 'frio', label: 'Frio' },
 ]
 
-export const sceneUrl = (scene: Scene) => `${BASE}/scenes/${scene}.jpg`
+/** Fundo escolhido pelo usuario/empresa alem das cenas de clima. */
+export const EXTRA_SCENES: { id: Scene; label: string }[] = [
+  { id: 'escritorio', label: 'Escritório' },
+  { id: 'custom', label: 'Minha imagem' },
+]
+
+export const sceneUrl = (scene: Scene) => (scene === 'custom' ? heroUrl() : `${BASE}/scenes/${scene}.jpg`)
+
+/** null = padrao da empresa; 'auto' = segue o clima; ou uma cena fixa. */
+export type Pin = Scene | 'auto' | null
 
 /** Cena enquanto o clima nao chegou (ou sem cidade escolhida): so olha a hora. */
 export function sceneByClock(date = new Date()): Scene {
@@ -34,7 +44,7 @@ export function sceneByClock(date = new Date()): Scene {
   return h < 6 || h >= 19 ? 'noite' : 'sol'
 }
 
-const isScene = (v: string | null): v is Scene => !!v && SCENES.some((s) => s.id === v)
+const isScene = (v: string | null): v is Scene => !!v && [...SCENES, ...EXTRA_SCENES].some((s) => s.id === v)
 
 /** ?scene=chuva na URL forca uma cena (util pra testar e mostrar). */
 export function sceneFromUrl(): Scene | null {
@@ -43,15 +53,15 @@ export function sceneFromUrl(): Scene | null {
 }
 
 const PIN_KEY = 'ayran.scene'
-export function loadPinnedScene(): Scene | null {
+export function loadPinnedScene(): Pin {
   try {
     const v = localStorage.getItem(PIN_KEY)
-    return isScene(v) ? v : null
+    return v === 'auto' ? 'auto' : isScene(v) ? v : null
   } catch {
     return null
   }
 }
-export function savePinnedScene(scene: Scene | null) {
+export function savePinnedScene(scene: Pin) {
   try {
     if (scene) localStorage.setItem(PIN_KEY, scene)
     else localStorage.removeItem(PIN_KEY)

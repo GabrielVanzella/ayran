@@ -103,3 +103,15 @@ def agenda_for(today: datetime) -> list[dict]:
         ("Apresentar o protótipo do Ayran", at(2, 11, 0, 60), "Sala de reunião", "Mostrar a Central, a voz e o modo oficina"),
     ]
     return [{"title": t, "start": s, "end": e, "place": p, "notes": n} for t, (s, e), p, n in items]
+
+
+# tarefas de exemplo (so entram no "Restaurar dados de exemplo", e apenas se a pessoa nao tiver nenhuma)
+# (titulo, detalhes, dias em relacao a hoje, status)
+TASKS: list[tuple[str, str, int, str]] = [
+    ("Enviar contrato revisado ao Cliente ABC", "Marina precisa até sexta para a diretoria assinar.", 1, "andamento"),
+    ("Apresentar o protótipo do Ayran à diretoria", "Mostrar o resumo do dia, o e-mail e a agenda.", 2, "pendente"),
+    ("Revisar o PR do módulo de agenda", "Aberto pelo Douglas ontem.", 0, "pendente"),
+    ("Conversar sobre renovação do contrato do Cliente ABC", "O contrato vence em 30 dias.", 3, "pendente"),
+    ("Fechar o orçamento do site com loja virtual (Rafael Lima)", "", 4, "pendente"),
+    ("Publicar a correção do cálculo de frete", "Já testada em homologação.", -1, "concluida"),
+]

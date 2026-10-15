@@ -1,8 +1,11 @@
 import { FlaskConical, Loader2, ShieldAlert, ShieldCheck, ShieldQuestion } from 'lucide-react'
 import type { Verdict } from '../lib/api'
+import { usePresenting } from '../lib/present'
 
 /** Marca o que vem de dados de exemplo: o prototipo nunca finge que e real. */
 export function ExampleTag({ text = 'Dados de exemplo' }: { text?: string }) {
+  const presenting = usePresenting()
+  if (presenting) return null // o selo geral de "dados ficticios" cobre a tela inteira
   return (
     <span
       title="Esta função usa dados de exemplo: ainda não está conectada a uma conta real."

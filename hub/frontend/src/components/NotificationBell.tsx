@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Bell, BellRing, CalendarDays, Check, Code2, ListTodo, Mail, Sparkles, TrendingUp, X } from 'lucide-react'
 import { AuthError, listNotifications, timeAgo, type AppNotification } from '../lib/api'
 import { ExampleTag } from './ui'
+import { isPresenting } from '../lib/present'
 
 type Target = AppNotification['target']
 type Props = { onAuthError: () => void; onOpen: (t: Target) => void }
@@ -39,7 +40,7 @@ export default function NotificationBell({ onAuthError, onOpen }: Props) {
       .then((list) => {
         if (known.current) {
           const fresh = list.find((n) => !known.current!.has(n.id) && n.source === 'real' && n.tone !== 'info') ?? list.find((n) => !known.current!.has(n.id) && n.kind === 'mail')
-          if (fresh) setToast(fresh)
+          if (fresh && !isPresenting()) setToast(fresh)
         }
         known.current = new Set(list.map((n) => n.id))
         setItems(list)

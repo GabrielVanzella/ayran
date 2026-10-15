@@ -1,6 +1,7 @@
 import { LogOut, Search, Settings2 } from 'lucide-react'
 import Backdrop from '../../components/Backdrop'
 import Orb from '../../components/Orb'
+import BrandMark from '../../components/BrandMark'
 import type { ShellProps } from '../types'
 
 /** Interface "Ayran": escura e imersiva. Foto de clima em tela cheia, menu lateral em capsula. */
@@ -16,6 +17,8 @@ export default function AyranShell({ scene, tab, title, nav, onTab, user, query,
             <div className="flex items-center gap-2.5">
               <Orb size={30} />
               <span className="hidden text-lg font-semibold tracking-wide sm:inline">Ayran</span>
+              <span className="mx-1 hidden h-6 w-px bg-white/25 lg:block" aria-hidden />
+              <BrandMark className="hidden text-white/85 lg:block" height={24} />
             </div>
 
             <form

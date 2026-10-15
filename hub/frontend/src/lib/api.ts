@@ -299,7 +299,7 @@ export function generatePassword(length = 12): string {
 
 // ---------- clima / servidor ----------
 
-export type Scene = 'praia' | 'dia' | 'sol' | 'nublado' | 'chuva' | 'tempestade' | 'neblina' | 'noite' | 'frio'
+export type Scene = 'praia' | 'dia' | 'sol' | 'nublado' | 'chuva' | 'tempestade' | 'neblina' | 'noite' | 'frio' | 'escritorio' | 'custom'
 export type DayForecast = { date: string; code: number; label: string; max: number; min: number; rain: number | null }
 export type Weather = {
   timezone: string
@@ -493,3 +493,32 @@ export type AppNotification = {
   target: { tab: string; id?: string }
 }
 export const listNotifications = () => request<{ items: AppNotification[] }>('/api/notifications').then((r) => r.items)
+
+export const resetDemo = () => request<{ ok: boolean }>('/api/demo/reset', { method: 'POST', body: '{}' })
+
+// ---------- identidade da empresa (logo, imagem principal) ----------
+
+export type Brand = {
+  name: string
+  site: string
+  hero_default: 'escritorio' | 'custom' | 'auto'
+  has_hero: boolean
+  has_logo: boolean
+  hero_v: number
+  logo_v: number
+}
+export const getBrand = () => request<Brand>('/api/brand')
+export const saveBrand = (b: { name: string; site: string; hero_default: string }) =>
+  request<Brand>('/api/brand', { method: 'PUT', body: JSON.stringify(b) })
+export const deleteBrandImage = (kind: 'hero' | 'logo') => request<Brand>(`/api/brand/${kind}`, { method: 'DELETE' })
+export async function uploadBrandImage(kind: 'hero' | 'logo', file: File): Promise<Brand> {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(BASE + `/api/brand/${kind}`, { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` }, body: form })
+  if (res.status === 401) throw new AuthError('Sessão expirada')
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(typeof body.detail === 'string' ? body.detail : `Erro ${res.status}`)
+  }
+  return res.json()
+}

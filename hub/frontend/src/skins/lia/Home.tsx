@@ -5,8 +5,11 @@ import TasksCard from '../../components/TasksCard'
 import LocationPicker from '../../components/LocationPicker'
 import { AgendaCard, MailCard } from '../../components/HomeCards'
 import type { HomeProps } from '../../components/Home'
+import type { Pin } from '../../lib/weather'
 import { useSceneCredit } from '../../lib/credits'
-import { SCENES, sceneUrl, weatherIcon } from '../../lib/weather'
+import { EXTRA_SCENES, SCENES, sceneUrl, weatherIcon } from '../../lib/weather'
+import { useBrand } from '../../lib/brand'
+import BrandMark from '../../components/BrandMark'
 import { AttentionTile, KpiStrip, NewsTile, ProjectRings, ShieldTile, TeamTile } from './tiles'
 
 const GRADIENT = 'bg-gradient-to-r from-[#2563eb] via-[#6366f1] to-[#7c3aed]'
@@ -21,6 +24,7 @@ export default function LiaHome(p: HomeProps) {
   const [now, setNow] = useState(new Date())
   const [editingCity, setEditingCity] = useState(false)
   const credit = useSceneCredit(p.scene)
+  const brand = useBrand()
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 15_000)
     return () => clearInterval(t)
@@ -40,16 +44,22 @@ export default function LiaHome(p: HomeProps) {
           <div className="absolute inset-0 bg-gradient-to-r from-[#f3f6fc]/90 via-[#f3f6fc]/45 to-transparent" aria-hidden />
           <div className="relative flex h-full min-h-[360px] flex-col justify-between gap-6 p-5 sm:p-7">
             <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="glass-pill flex items-center gap-3 rounded-2xl px-4 py-2" aria-label="Empresa">
+                <BrandMark height={26} />
+                {brand.site && <span className="lia-mono hidden border-l border-[color:var(--color-line)] pl-3 text-dim sm:block">{brand.site}</span>}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
               <label className="glass-pill flex items-center gap-2 rounded-full px-3 py-1.5 text-xs">
-                <span className="lia-mono text-dim">Cenário</span>
+                <span className="lia-mono text-dim">Imagem</span>
                 <select
-                  value={p.pinned ?? 'auto'}
-                  onChange={(e) => p.onPin(e.target.value === 'auto' ? null : (e.target.value as typeof p.scene))}
+                  value={p.pinned ?? 'default'}
+                  onChange={(e) => p.onPin(e.target.value === 'default' ? null : (e.target.value as Pin))}
                   className="bg-transparent outline-none"
-                  aria-label="Cenário de fundo"
+                  aria-label="Imagem principal"
                 >
-                  <option value="auto">Automático</option>
-                  {SCENES.map((s) => (
+                  <option value="default">Padrão da empresa</option>
+                  <option value="auto">Clima (automático)</option>
+                  {[...EXTRA_SCENES.filter((s) => s.id !== 'custom' || brand.has_hero), ...SCENES].map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.label}
                     </option>
@@ -71,6 +81,7 @@ export default function LiaHome(p: HomeProps) {
                   </>
                 )}
               </button>
+              </div>
             </div>
 
             {(editingCity || !p.location) && (

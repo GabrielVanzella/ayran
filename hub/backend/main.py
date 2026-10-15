@@ -30,6 +30,7 @@ from starlette.background import BackgroundTask
 
 from feeds import TOPICS
 from account import build_router as build_account_router
+from brand import build_router as build_brand_router
 from cityscenes import build_router as build_city_router
 from media import build_router as build_media_router, init_media_db
 from office import build_router as build_office_router, init_office_db
@@ -213,6 +214,7 @@ app.include_router(build_team_router(current_user, forget_user, purge_user_data)
 app.include_router(build_account_router(current_user))
 app.include_router(build_voice_router(current_user))
 app.include_router(build_office_router(db, current_user))
+app.include_router(build_brand_router(current_user, AYRAN_HOME / "hub"))
 
 
 # ---------------- login automatico (so no proprio servidor) ----------------

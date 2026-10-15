@@ -37,7 +37,9 @@ import {
   type User,
   type Weather,
 } from './lib/api'
-import { loadPinnedScene, savePinnedScene, sceneByClock, sceneFromUrl } from './lib/weather'
+import { loadPinnedScene, savePinnedScene, sceneByClock, sceneFromUrl, type Pin } from './lib/weather'
+import { useBrand } from './lib/brand'
+import { usePresenting } from './lib/present'
 
 export type Tab = 'home' | 'chat' | 'create' | 'news' | 'ideas' | 'tasks' | 'mail' | 'agenda' | 'business' | 'recursos' | 'team'
 
@@ -89,7 +91,9 @@ export default function App() {
   const [online, setOnline] = useState(true)
   const [weather, setWeather] = useState<Weather | null>(null)
   const [weatherError, setWeatherError] = useState(false)
-  const [pinned, setPinned] = useState<Scene | null>(loadPinnedScene)
+  const [pinned, setPinned] = useState<Pin>(loadPinnedScene)
+  const brand = useBrand()
+  const presenting = usePresenting()
   const [query, setQuery] = useState('')
   const [accountOpen, setAccountOpen] = useState(false)
   const [mailFocus, setMailFocus] = useState<string | null>(null)
@@ -181,13 +185,15 @@ export default function App() {
     await putSettings({ location }).catch(() => {})
   }
 
-  function pin(scene: Scene | null) {
+  function pin(scene: Pin) {
     setPinned(scene)
     savePinnedScene(scene)
   }
 
   // Cena: o que o usuario fixou > ?scene= na URL > clima atual > hora do dia
-  const scene: Scene = pinned ?? sceneFromUrl() ?? weather?.scene ?? sceneByClock()
+  const weatherScene: Scene = sceneFromUrl() ?? weather?.scene ?? sceneByClock()
+  const companyScene: Scene = brand.hero_default === 'custom' && brand.has_hero ? 'custom' : brand.hero_default === 'auto' ? weatherScene : 'escritorio'
+  const scene: Scene = pinned === 'auto' ? weatherScene : (pinned ?? companyScene)
 
   // "Minha localizacao" (geolocalizacao do navegador) vira o nome da cidade, que a vista da cidade precisa.
   const locName = settings?.location?.name
@@ -274,6 +280,11 @@ export default function App() {
           }}
           onAuthError={logout}
         />
+      )}
+      {presenting && (
+        <p className="pointer-events-none fixed bottom-2 left-3 z-20 rounded-full bg-[#0f172ad9] px-3 py-1 text-[10px] text-[#ffffff] backdrop-blur">
+          Demonstração com dados fictícios · {brand.site || brand.name}
+        </p>
       )}
       <Shell
         scene={scene}

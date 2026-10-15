@@ -267,6 +267,27 @@ def build_router(db, current_user) -> APIRouter:
             "weekly_sales": [{"label": "Semana 1", "value": 38}, {"label": "Semana 2", "value": 44}, {"label": "Semana 3", "value": 41}, {"label": "Semana 4", "value": 72}],
         }
 
+    # ------------------------------------------------------------ demonstracao
+    @router.post("/demo/reset")
+    async def demo_reset(user=Depends(current_user)):
+        """Volta os dados de EXEMPLO ao estado inicial (para apresentacoes e prints). Nao mexe no que a pessoa criou de verdade,
+        exceto: se ela nao tem nenhuma tarefa, entram tarefas de exemplo."""
+        uid = user["id"]
+        with db() as conn:
+            conn.execute("delete from mails where user_id = ? and demo = 1", (uid,))
+            conn.execute("delete from events where user_id = ? and demo = 1", (uid,))
+            conn.execute("delete from office_seed where user_id = ?", (uid,))
+            seed_mail(conn, uid)
+            seed_agenda(conn, uid)
+            if not conn.execute("select 1 from tasks where user_id = ? limit 1", (uid,)).fetchone():
+                now = int(time.time())
+                for title, details, offset, status in samples.TASKS:
+                    conn.execute(
+                        "insert into tasks (id, user_id, title, details, due_date, status, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?)",
+                        (uuid.uuid4().hex, uid, title, details, (date.today() + timedelta(days=offset)).isoformat(), status, now, now),
+                    )
+        return {"ok": True}
+
     # ------------------------------------------------------------ resumo do dia
     @router.get("/briefing")
     async def briefing(user=Depends(current_user)):

@@ -65,6 +65,13 @@ svg.lucide {
 .scene-veil.soft {
   background: rgb(5 9 16 / 0.4);
 }
+/* fotos movimentadas (escritorio ou imagem da empresa): veu mais forte para o texto continuar legivel */
+.scene-veil.busy:not(.soft) {
+  background:
+    linear-gradient(90deg, rgb(4 8 16 / 0.82) 0%, rgb(4 8 16 / 0.6) 38%, rgb(4 8 16 / 0.12) 78%),
+    linear-gradient(0deg, rgb(4 8 16 / 0.7) 0%, transparent 38%),
+    linear-gradient(180deg, rgb(4 8 16 / 0.55) 0%, transparent 22%);
+}
 
 /* Gradientes de reserva enquanto a imagem carrega (ou se ela faltar) */
 [data-scene='praia'] { --scene-fallback: linear-gradient(160deg, #0b4f6c, #1c8fa8 55%, #e8c27a); }
@@ -75,6 +82,7 @@ svg.lucide {
 [data-scene='tempestade'] { --scene-fallback: linear-gradient(160deg, #0a0d18, #232a4a 60%, #4a4f7a); }
 [data-scene='neblina'] { --scene-fallback: linear-gradient(160deg, #1b2530, #5b6b74 70%, #93a1a6); }
 [data-scene='noite'] { --scene-fallback: linear-gradient(160deg, #04070f, #0f1f3d 70%, #1d3a66); }
+[data-scene='escritorio'], [data-scene='custom'] { --scene-fallback: linear-gradient(160deg, #0d1522, #22344f 65%, #3d5a82); }
 [data-scene='frio'] { --scene-fallback: linear-gradient(160deg, #16283d, #5b86ad 65%, #cfe3f2); }
 
 /* ---------- material ---------- */
@@ -317,4 +325,22 @@ h1, h2, h3 { text-wrap: balance; }
 }
 @media (prefers-reduced-motion: reduce) {
   .lia-core, .lia-core::before, .lia-core::after { animation: none; }
+}
+
+/* campo de formulario padrao (usa os tokens, entao vale nas duas interfaces) */
+.field {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--color-line);
+  background: color-mix(in srgb, var(--color-white) 6%, transparent);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.875rem;
+  color: inherit;
+  outline: none;
+}
+.field:focus {
+  border-color: color-mix(in srgb, var(--color-white) 45%, transparent);
+}
+.field[aria-invalid='true'] {
+  border-color: rgb(248 113 113 / 0.8);
 }

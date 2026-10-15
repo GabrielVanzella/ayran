@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { LogOut, Search } from 'lucide-react'
+import BrandMark from '../../components/BrandMark'
 import type { ShellProps } from '../types'
 
 const GRADIENT = 'bg-gradient-to-r from-[#2563eb] via-[#6366f1] to-[#7c3aed]'
@@ -34,6 +35,8 @@ export default function LiaShell({ tab, title, nav, onTab, user, query, onQuery,
               <span className="lia-gradient-text block text-xl font-semibold tracking-tight">Lia</span>
               <span className="lia-mono text-dim">by Ayran</span>
             </span>
+            <span className="mx-1 hidden h-7 w-px bg-[color:var(--color-line)] lg:block" aria-hidden />
+            <BrandMark className="hidden lg:block" height={26} />
           </div>
 
           <form

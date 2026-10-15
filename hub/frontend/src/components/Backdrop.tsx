@@ -29,7 +29,7 @@ export default function Backdrop({ scene, imageUrl, soft = false }: { scene: Sce
           style={{ backgroundImage: `url(${l.src}), var(--scene-fallback)` }}
         />
       ))}
-      <div className={`scene-veil ${soft ? 'soft' : ''}`} />
+      <div className={`scene-veil ${soft ? 'soft' : ''} ${scene === 'escritorio' || scene === 'custom' ? 'busy' : ''}`} />
     </>
   )
 }

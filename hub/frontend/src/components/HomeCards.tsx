@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowRight, CalendarDays, Mail } from 'lucide-react'
 import { AuthError, listAgenda, listMail, simulateMail, timeAgo, type AgendaEvent, type Mail as MailT } from '../lib/api'
 import { ExampleTag, VerdictChip } from './ui'
 import { todayISO } from './Tasks'
+import { isPresenting } from '../lib/present'
 
 function Head({ icon: Icon, title, badge, onMore, tag }: { icon: typeof Mail; title: string; badge?: React.ReactNode; onMore: () => void; tag?: React.ReactNode }) {
   return (
@@ -37,7 +38,7 @@ export function MailCard({ onOpen, onMore, onAuthError }: { onOpen: (id: string)
 
   // demonstracao: uma vez por sessao do navegador, chega um e-mail novo logo depois de abrir a Home
   useEffect(() => {
-    let done = false
+    let done = isPresenting() // apresentacao: nada chega sozinho
     try {
       done = sessionStorage.getItem('ayran.demo.arrived') === '1'
     } catch {

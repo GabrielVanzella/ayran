@@ -1,3 +1,4 @@
+import BrandSettings from './BrandSettings'
 import { useCallback, useEffect, useState } from 'react'
 import { Check, Copy, KeyRound, Loader2, Plus, ShieldCheck, Trash2, UserPlus, X } from 'lucide-react'
 import {
@@ -99,6 +100,8 @@ export default function Team({ onAuthError }: { onAuthError: () => void }) {
           <UserPlus className="size-4" /> Novo acesso
         </button>
       </header>
+
+      <BrandSettings onAuthError={onAuthError} />
 
       {error && <p role="alert" className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
 
